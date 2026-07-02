@@ -1,4 +1,6 @@
+
 import { useState } from "react";
+import { motion } from "motion/react";
 import {
   FaReact,
   FaNodeJs,
@@ -16,6 +18,12 @@ import {
   SiPytorch,
   SiNextdotjs,
   SiTailwindcss,
+  SiC,
+  SiCplusplus,
+  SiKubernetes,
+  SiJenkins,
+  SiGooglecloud,
+  SiPandas
 } from "react-icons/si";
 
 export default function About() {
@@ -24,20 +32,26 @@ export default function About() {
   );
 
   const skillIcons = [
-    { name: "React", icon: <FaReact className="text-4xl" /> },
-    { name: "Next.js", icon: <SiNextdotjs className="text-4xl" /> },
-    { name: "TypeScript", icon: <SiTypescript className="text-4xl" /> },
-    { name: "JavaScript", icon: <SiJavascript className="text-4xl" /> },
-    { name: "Python", icon: <FaPython className="text-4xl" /> },
-    { name: "Node.js", icon: <FaNodeJs className="text-4xl" /> },
-    { name: "PostgreSQL", icon: <SiPostgresql className="text-4xl" /> },
-    { name: "MongoDB", icon: <SiMongodb className="text-4xl" /> },
-    { name: "TensorFlow", icon: <SiTensorflow className="text-4xl" /> },
-    { name: "PyTorch", icon: <SiPytorch className="text-4xl" /> },
-    { name: "Tailwind CSS", icon: <SiTailwindcss className="text-4xl" /> },
-    { name: "Docker", icon: <FaDocker className="text-4xl" /> },
-    { name: "AWS", icon: <FaAws className="text-4xl" /> },
-    { name: "Git", icon: <FaGitAlt className="text-4xl" /> },
+    { name: "React", icon: <FaReact className="text-3xl sm:text-4xl" /> },
+    { name: "Next.js", icon: <SiNextdotjs className="text-3xl sm:text-4xl" /> },
+    { name: "TypeScript", icon: <SiTypescript className="text-3xl sm:text-4xl" /> },
+    { name: "JavaScript", icon: <SiJavascript className="text-3xl sm:text-4xl" /> },
+    { name: "Python", icon: <FaPython className="text-3xl sm:text-4xl" /> },
+    { name: "Node.js", icon: <FaNodeJs className="text-3xl sm:text-4xl" /> },
+    { name: "PostgreSQL", icon: <SiPostgresql className="text-3xl sm:text-4xl" /> },
+    { name: "MongoDB", icon: <SiMongodb className="text-3xl sm:text-4xl" /> },
+    { name: "TensorFlow", icon: <SiTensorflow className="text-3xl sm:text-4xl" /> },
+    { name: "PyTorch", icon: <SiPytorch className="text-3xl sm:text-4xl" /> },
+    { name: "Tailwind CSS", icon: <SiTailwindcss className="text-3xl sm:text-4xl" /> },
+    { name: "Docker", icon: <FaDocker className="text-3xl sm:text-4xl" /> },
+    { name: "AWS", icon: <FaAws className="text-3xl sm:text-4xl" /> },
+    { name: "Git", icon: <FaGitAlt className="text-3xl sm:text-4xl" /> },
+    { name: "C++", icon: <SiCplusplus className="text-3xl sm:text-4xl"/> },
+    { name: "Kubernetus", icon: <SiKubernetes className="text-3xl sm:text-4xl"/> },
+    { name: "C", icon: <SiC className="text-3xl sm:text-4xl"/> },
+    { name: "Jenkins", icon: <SiJenkins className="text-3xl sm:text-4xl"/> },
+    { name: "GCP", icon: <SiGooglecloud className="text-3xl sm:text-4xl"/> },
+    { name: "Pandas", icon: <SiPandas className="text-3xl sm:text-4xl"/> },
   ];
 
   const experience = [
@@ -109,18 +123,15 @@ export default function About() {
       {/* Top gradient bar */}
       <div className="h-8 w-screen bg-linear-to-b from-gray-200 via-blue-700 to-gray-950" />
 
-      {/* Background + Finder overlay */}
-      <div className="relative flex w-full bg-gray-950 items-center justify-center p-6">
-        <img
-          src="about-background.png"
-          alt="Portfolio Background"
-          className="w-[90%] rounded-3xl shadow-2xl pt-8 pb-8 object-cover"
-        />
-
-        {/* Finder-style floating window */}
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <div className="pointer-events-auto w-[80%] max-w-5xl h-[70%] rounded-2xl bg-gray-900/70 backdrop-blur-2xl border border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.8)] flex flex-col overflow-hidden">
-            {/* Title bar */}
+          <div className="relative flex w-full bg-gray-950 items-center justify-center p-3 sm:p-6 min-h-[85vh]" data-nav-theme="dark">
+              <motion.div
+                initial={{ opacity: 0, y: 40 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-100px" }}
+                transition={{ duration: 0.7, ease: "easeOut" }}
+                className="w-full sm:w-[90%] max-w-5xl min-h-[70vh] rounded-2xl bg-gray-900/70 backdrop-blur-2xl border border-white/10 shadow-[0_20px_60px_rgba(0,0,0,0.8)] flex flex-col overflow-hidden"
+              >
+                {/* Title bar */}
             <div className="flex items-center px-4 py-2 bg-gray-800/70 border-b border-white/10">
               <div className="flex space-x-2">
                 <div className="w-3 h-3 rounded-full bg-red-500" />
@@ -134,17 +145,18 @@ export default function About() {
             
 
             {/* Body: sidebar + main */}
-            <div className="flex flex-1 min-h-0">
+            <div className="flex flex-col sm:flex-row flex-1 min-h-0">
               {/* Sidebar */}
-              <aside className="w-[23%] bg-gray-900/60 border-r border-white/10 p-4 text-gray-300">
+              <aside className="w-full sm:w-[23%] bg-gray-900/60 sm:border-r border-b sm:border-b-0 border-white/10 p-3 sm:p-4 text-gray-300">
                 <p className="text-[11px] uppercase tracking-[0.12em] text-gray-400 mb-2">
                   Favourites
                 </p>
+                <div className="flex sm:block gap-2 overflow-x-auto pb-1 sm:pb-0 hide-scrollbar">
                 {["Skills", "Experience", "Projects"].map((item) => (
                   <button
                     key={item}
                     onClick={() => setActive(item as any)}
-                    className={`w-full text-left px-3 py-2 rounded-md text-sm mb-1 transition-all
+                    className={`w-auto sm:w-full whitespace-nowrap text-left px-3 py-2 rounded-md text-sm mb-0 sm:mb-1 transition-all
                       ${
                         active === item
                           ? "bg-blue-500 text-white shadow-sm"
@@ -154,6 +166,7 @@ export default function About() {
                     {item}
                   </button>
                 ))}
+                </div>
               </aside>
 
               {/* Main view */}
@@ -165,7 +178,7 @@ export default function About() {
                       <span>Icon View</span>
                       <span>{skillIcons.length} items</span>
                     </div>
-                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-6 place-items-center">
+                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-3 sm:gap-6 place-items-center">
                       {skillIcons.map((skill) => (
                         <div
                           key={skill.name}
@@ -231,9 +244,7 @@ export default function About() {
                 )}
               </main>
             </div>
-          </div>
-        </div>
-        
+          </motion.div>
       </div>
     <div className="h-8 w-screen bg-linear-to-b from-gray-950 via-blue-700 to-gray-50" />
     </section>

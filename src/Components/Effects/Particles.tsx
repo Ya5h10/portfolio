@@ -14,6 +14,7 @@ interface ParticlesProps {
   cameraDistance?: number;
   disableRotation?: boolean;
   className?: string;
+  mouseRef?: React.RefObject<{ x: number; y: number }>;
 }
 
 const defaultColors: string[] = ['#ffffff', '#ffffff', '#ffffff'];
@@ -111,10 +112,12 @@ const Particles: React.FC<ParticlesProps> = ({
   sizeRandomness = 1,
   cameraDistance = 23,
   disableRotation = false,
-  className
+  className,
+  mouseRef: externalMouseRef,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
-  const mouseRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const internalMouseRef = useRef<{ x: number; y: number }>({ x: 0, y: 0 });
+  const mouseRef = externalMouseRef ?? internalMouseRef;
 
   useEffect(() => {
     const container = containerRef.current;
@@ -123,6 +126,7 @@ const Particles: React.FC<ParticlesProps> = ({
     const renderer = new Renderer({ depth: false, alpha: true });
     const gl = renderer.gl;
     container.appendChild(gl.canvas);
+    gl.canvas.style.pointerEvents = "none";
     gl.clearColor(0, 0, 0, 0);
 
     const camera = new Camera(gl, { fov: 15 });
@@ -144,8 +148,8 @@ const Particles: React.FC<ParticlesProps> = ({
       mouseRef.current = { x, y };
     };
 
-    if (moveParticlesOnHover) {
-      container.addEventListener('mousemove', handleMouseMove);
+    if (moveParticlesOnHover && !externalMouseRef) {
+      container.addEventListener("mousemove", handleMouseMove);
     }
 
     const count = particleCount;
@@ -224,8 +228,8 @@ const Particles: React.FC<ParticlesProps> = ({
 
     return () => {
       window.removeEventListener('resize', resize);
-      if (moveParticlesOnHover) {
-        container.removeEventListener('mousemove', handleMouseMove);
+      if (moveParticlesOnHover && !externalMouseRef) {
+        container.removeEventListener("mousemove", handleMouseMove);
       }
       cancelAnimationFrame(animationFrameId);
       if (container.contains(gl.canvas)) {
