@@ -3,9 +3,10 @@ import { useCallback, useEffect, useRef, useState } from "react";
 const COLS = 10;
 const ROWS = 20;
 const BLOCK = 28;
-const START_DROP_MS = 500;
-const MIN_DROP_MS = 160;
-const LOCK_DELAY_MS = 280;
+const START_DROP_MS = 480;
+const MIN_DROP_MS = 140;
+const LOCK_DELAY_MS = 300;
+const DRAW_HZ = 1000 / 60;
 
 const SHAPES: number[][][] = [
   [[1, 1, 1, 1]],
@@ -90,17 +91,18 @@ function collides(board: Cell[][], shape: number[][], ox: number, oy: number) {
 export default function TetrisGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const boardRef = useRef<Cell[][]>(emptyBoard());
-  const pieceRef = useRef<Piece>(randomPiece());
+  const pieceRef = useRef<Piece | null>(null);
   const runningRef = useRef(false);
   const gameOverRef = useRef(false);
   const dropMsRef = useRef(START_DROP_MS);
-  const dropAccRef = useRef(0);
-  const lockAccRef = useRef(0);
+  const lockUntilRef = useRef(0);
   const lockingRef = useRef(false);
   const linesRef = useRef(0);
   const scoreRef = useRef(0);
-  const rafRef = useRef(0);
-  const lastTsRef = useRef(0);
+  const gravityTimerRef = useRef<number | null>(null);
+  const drawTimerRef = useRef<number | null>(null);
+  const dropAccRef = useRef(0);
+  const lastGravityTsRef = useRef(0);
 
   const [score, setScore] = useState(0);
   const [lines, setLines] = useState(0);
@@ -117,7 +119,7 @@ export default function TetrisGame() {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     const paintCell = (x: number, y: number, colorIdx: number) => {
-      ctx.fillStyle = COLORS[colorIdx - 1];
+      ctx.fillStyle = COLORS[(colorIdx - 1) % COLORS.length];
       ctx.fillRect(x * BLOCK + 1, y * BLOCK + 1, BLOCK - 2, BLOCK - 2);
     };
 
@@ -129,9 +131,11 @@ export default function TetrisGame() {
     }
 
     const p = pieceRef.current;
-    for (let y = 0; y < p.shape.length; y++) {
-      for (let x = 0; x < p.shape[y].length; x++) {
-        if (p.shape[y][x]) paintCell(p.x + x, p.y + y, p.color);
+    if (p) {
+      for (let y = 0; y < p.shape.length; y++) {
+        for (let x = 0; x < p.shape[y].length; x++) {
+          if (p.shape[y][x]) paintCell(p.x + x, p.y + y, p.color);
+        }
       }
     }
 
@@ -173,11 +177,13 @@ export default function TetrisGame() {
       setLines(linesRef.current);
       setScore(scoreRef.current);
     }
+    return cleared;
   }, []);
 
   const mergePiece = useCallback(() => {
-    const board = boardRef.current.map((row) => [...row]);
     const p = pieceRef.current;
+    if (!p) return;
+    const board = boardRef.current.map((row) => [...row]);
     for (let y = 0; y < p.shape.length; y++) {
       for (let x = 0; x < p.shape[y].length; x++) {
         if (!p.shape[y][x]) continue;
@@ -189,32 +195,37 @@ export default function TetrisGame() {
       }
     }
     boardRef.current = board;
+    pieceRef.current = null;
+    lockingRef.current = false;
+    lockUntilRef.current = 0;
     clearLines();
   }, [clearLines]);
 
   const spawn = useCallback(() => {
     const next = randomPiece();
-    pieceRef.current = next;
-    lockingRef.current = false;
-    lockAccRef.current = 0;
-    dropAccRef.current = 0;
     if (collides(boardRef.current, next.shape, next.x, next.y)) {
+      pieceRef.current = next;
       gameOverRef.current = true;
       runningRef.current = false;
       setGameOver(true);
       setRunning(false);
+      return;
     }
+    pieceRef.current = next;
+    lockingRef.current = false;
+    lockUntilRef.current = 0;
   }, []);
 
   const tryMove = useCallback((dx: number, dy: number) => {
     if (!runningRef.current || gameOverRef.current) return false;
     const p = pieceRef.current;
+    if (!p) return false;
     if (!collides(boardRef.current, p.shape, p.x + dx, p.y + dy)) {
       p.x += dx;
       p.y += dy;
       if (dy !== 0) {
         lockingRef.current = false;
-        lockAccRef.current = 0;
+        lockUntilRef.current = 0;
       }
       return true;
     }
@@ -224,6 +235,7 @@ export default function TetrisGame() {
   const tryRotate = useCallback(() => {
     if (!runningRef.current || gameOverRef.current) return;
     const p = pieceRef.current;
+    if (!p) return;
     const rotated = rotate(p.shape);
     const kicks = [0, -1, 1, -2, 2];
     for (const kick of kicks) {
@@ -231,7 +243,7 @@ export default function TetrisGame() {
         p.shape = rotated;
         p.x += kick;
         lockingRef.current = false;
-        lockAccRef.current = 0;
+        lockUntilRef.current = 0;
         return;
       }
     }
@@ -240,6 +252,7 @@ export default function TetrisGame() {
   const hardDrop = useCallback(() => {
     if (!runningRef.current || gameOverRef.current) return;
     const p = pieceRef.current;
+    if (!p) return;
     while (!collides(boardRef.current, p.shape, p.x, p.y + 1)) {
       p.y += 1;
       scoreRef.current += 2;
@@ -258,50 +271,109 @@ export default function TetrisGame() {
     return false;
   }, [tryMove]);
 
-  const tick = useCallback(
-    (dt: number) => {
-      if (!runningRef.current || gameOverRef.current) return;
+  /** One cell of gravity, or lock when grounded. */
+  const stepDown = useCallback(() => {
+    if (!runningRef.current || gameOverRef.current) return;
+    const p = pieceRef.current;
+    if (!p) {
+      spawn();
+      return;
+    }
+
+    const grounded = collides(boardRef.current, p.shape, p.x, p.y + 1);
+    const now = performance.now();
+
+    if (grounded) {
+      if (!lockingRef.current) {
+        lockingRef.current = true;
+        lockUntilRef.current = now + LOCK_DELAY_MS;
+        return;
+      }
+      if (now >= lockUntilRef.current) {
+        mergePiece();
+        spawn();
+      }
+      return;
+    }
+
+    lockingRef.current = false;
+    lockUntilRef.current = 0;
+    p.y += 1;
+  }, [mergePiece, spawn]);
+
+  const stopLoops = useCallback(() => {
+    if (gravityTimerRef.current != null) {
+      window.clearInterval(gravityTimerRef.current);
+      gravityTimerRef.current = null;
+    }
+    if (drawTimerRef.current != null) {
+      window.clearInterval(drawTimerRef.current);
+      drawTimerRef.current = null;
+    }
+  }, []);
+
+  const startLoops = useCallback(() => {
+    stopLoops();
+    dropAccRef.current = 0;
+    lastGravityTsRef.current = performance.now();
+
+    // Fast poll with accumulator — picks up speed changes and lock delay.
+    gravityTimerRef.current = window.setInterval(() => {
+      if (!runningRef.current || gameOverRef.current) {
+        lastGravityTsRef.current = performance.now();
+        return;
+      }
+      const now = performance.now();
+      const dt = Math.min(100, now - lastGravityTsRef.current);
+      lastGravityTsRef.current = now;
 
       const p = pieceRef.current;
-      const grounded = collides(boardRef.current, p.shape, p.x, p.y + 1);
+      if (!p) {
+        spawn();
+        return;
+      }
 
+      const grounded = collides(boardRef.current, p.shape, p.x, p.y + 1);
       if (grounded) {
-        lockingRef.current = true;
-        lockAccRef.current += dt;
-        if (lockAccRef.current >= LOCK_DELAY_MS) {
+        if (!lockingRef.current) {
+          lockingRef.current = true;
+          lockUntilRef.current = now + LOCK_DELAY_MS;
+        } else if (now >= lockUntilRef.current) {
           mergePiece();
           spawn();
         }
-      } else {
-        lockingRef.current = false;
-        lockAccRef.current = 0;
-        dropAccRef.current += dt;
-        while (dropAccRef.current >= dropMsRef.current) {
-          dropAccRef.current -= dropMsRef.current;
-          if (!tryMove(0, 1)) {
-            lockingRef.current = true;
-            lockAccRef.current = 0;
-            break;
-          }
+        dropAccRef.current = 0;
+        return;
+      }
+
+      lockingRef.current = false;
+      dropAccRef.current += dt;
+      while (dropAccRef.current >= dropMsRef.current) {
+        dropAccRef.current -= dropMsRef.current;
+        stepDown();
+        if (
+          !pieceRef.current ||
+          collides(
+            boardRef.current,
+            pieceRef.current.shape,
+            pieceRef.current.x,
+            pieceRef.current.y + 1,
+          )
+        ) {
+          break;
         }
       }
-    },
-    [mergePiece, spawn, tryMove],
-  );
+    }, 33);
+
+    drawTimerRef.current = window.setInterval(() => {
+      draw();
+    }, DRAW_HZ);
+  }, [draw, mergePiece, spawn, stepDown, stopLoops]);
 
   useEffect(() => {
     draw();
-    const loop = (ts: number) => {
-      if (!lastTsRef.current) lastTsRef.current = ts;
-      const dt = Math.min(64, ts - lastTsRef.current);
-      lastTsRef.current = ts;
-      tick(dt);
-      draw();
-      rafRef.current = requestAnimationFrame(loop);
-    };
-    rafRef.current = requestAnimationFrame(loop);
+    startLoops();
 
-    // Hidden test hook for automated verification of line clears
     const onTestClear = () => {
       const board = emptyBoard();
       for (let x = 0; x < COLS; x++) board[ROWS - 1][x] = 1;
@@ -313,15 +385,29 @@ export default function TetrisGame() {
     window.addEventListener("tetris-test-clear", onTestClear);
 
     return () => {
-      cancelAnimationFrame(rafRef.current);
+      stopLoops();
       window.removeEventListener("tetris-test-clear", onTestClear);
     };
-  }, [clearLines, draw, tick]);
+  }, [clearLines, draw, startLoops, stopLoops]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (!runningRef.current) return;
-      const keys = ["ArrowLeft", "ArrowRight", "ArrowDown", "ArrowUp", " ", "w", "a", "s", "d", "W", "A", "S", "D"];
+      const keys = [
+        "ArrowLeft",
+        "ArrowRight",
+        "ArrowDown",
+        "ArrowUp",
+        " ",
+        "w",
+        "a",
+        "s",
+        "d",
+        "W",
+        "A",
+        "S",
+        "D",
+      ];
       if (!keys.includes(e.key)) return;
       e.preventDefault();
       if (e.key === "ArrowLeft" || e.key === "a" || e.key === "A") tryMove(-1, 0);
@@ -336,20 +422,20 @@ export default function TetrisGame() {
 
   const reset = () => {
     boardRef.current = emptyBoard();
-    pieceRef.current = randomPiece();
+    pieceRef.current = null;
     dropMsRef.current = START_DROP_MS;
-    dropAccRef.current = 0;
-    lockAccRef.current = 0;
     lockingRef.current = false;
+    lockUntilRef.current = 0;
     linesRef.current = 0;
     scoreRef.current = 0;
     gameOverRef.current = false;
     runningRef.current = true;
-    lastTsRef.current = 0;
     setScore(0);
     setLines(0);
     setGameOver(false);
     setRunning(true);
+    spawn();
+    startLoops();
     draw();
   };
 
@@ -361,7 +447,6 @@ export default function TetrisGame() {
   const resume = () => {
     if (gameOverRef.current) return;
     runningRef.current = true;
-    lastTsRef.current = 0;
     setRunning(true);
   };
 
@@ -369,6 +454,7 @@ export default function TetrisGame() {
     <div className="flex flex-col gap-5 sm:flex-row sm:items-start">
       <div className="mx-auto overflow-hidden rounded-2xl border border-slate-700 shadow-xl shadow-slate-900/20">
         <canvas
+          id="tetris-canvas"
           ref={canvasRef}
           width={COLS * BLOCK}
           height={ROWS * BLOCK}

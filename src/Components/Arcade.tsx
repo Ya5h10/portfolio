@@ -62,7 +62,13 @@ export default function Arcade() {
         </div>
 
         <div className="rounded-[1.75rem] border border-slate-200/80 bg-white/75 p-5 shadow-lg shadow-slate-200/40 backdrop-blur-sm sm:p-8">
-          {tab === "tetris" ? <TetrisGame /> : <DoomEmbed />}
+          {/* Keep both mounted so game loops / Doom WASM survive tab switches */}
+          <div className={tab === "tetris" ? "block" : "hidden"} aria-hidden={tab !== "tetris"}>
+            <TetrisGame />
+          </div>
+          <div className={tab === "doom" ? "block" : "hidden"} aria-hidden={tab !== "doom"}>
+            <DoomEmbed />
+          </div>
         </div>
       </div>
     </section>

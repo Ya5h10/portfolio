@@ -14,15 +14,23 @@ export default function DoomEmbed() {
     const frame = iframeRef.current;
     if (!frame) return;
     try {
-      frame.focus();
+      frame.setAttribute("tabindex", "0");
+      frame.focus({ preventScroll: true });
       frame.contentWindow?.focus();
       frame.contentWindow?.postMessage({ type: "doom-focus" }, "*");
       const canvas = frame.contentDocument?.getElementById("DoomGame") as
         | HTMLCanvasElement
         | null;
-      canvas?.focus();
+      if (canvas) {
+        canvas.tabIndex = 0;
+        canvas.focus({ preventScroll: true });
+        try {
+          canvas.setPointerCapture?.(1);
+        } catch {
+          /* ignore */
+        }
+      }
     } catch {
-      // cross-origin shouldn't apply for same-origin /games/doom/
       frame.focus();
       frame.contentWindow?.postMessage({ type: "doom-focus" }, "*");
     }
