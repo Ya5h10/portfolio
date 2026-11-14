@@ -1,7 +1,11 @@
+import AmbientBackground from './Components/AmbientBackground'
 import Hero from './Components/Hero'
 import './App.css'
 import Navbar from './Components/ui/Navabar'
-import About from './Components/About'
+import Arcade from './Components/Arcade'
+import Experience from './Components/Experience'
+import Education from './Components/Education'
+import Stack from './Components/Stack'
 import Projects from './Components/Projects'
 import Websites from './Components/Websites'
 import Contact from './Components/Contact'
@@ -11,21 +15,25 @@ function App() {
   const isContactPage = window.location.pathname === '/contact'
 
   return (
-    <div className="flex flex-col min-h-screen">
-    <Navbar/>
-    {isContactPage ? (
-      <Contact/>
-    ) : (
-      <>
-      <Hero/>
-      <About/>
-      <Projects/>
-      <Websites/>
-      </>
-    )}
-    <Footer />
+    <div className="relative flex min-h-screen flex-col">
+      <AmbientBackground />
+      <Navbar />
+      {isContactPage ? (
+        <Contact />
+      ) : (
+        <>
+          <Hero />
+          <Projects />
+          <Experience />
+          <Education />
+          <Stack />
+          <Arcade />
+          <Websites />
+          <Contact embedded />
+        </>
+      )}
+      <Footer />
     </div>
-
   )
 }
 

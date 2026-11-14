@@ -1,123 +1,115 @@
 export interface Project {
   id: string;
   name: string;
-  repo: string;
+  repo?: string;
+  liveUrl?: string;
   language: string;
   stack: string[];
   tagline: string;
   description: string;
   highlights: string[];
+  process: string[];
+  outcome: string;
   accent: string;
   index: string;
+  year: string;
 }
 
 export const projects: Project[] = [
   {
-    id: "ask-questions-about-websites",
-    name: "AI Web Scraper",
-    repo: "https://github.com/Ya5h10/Ask-questions-about-websites",
-    language: "TypeScript",
-    stack: ["Next.js", "Express", "BullMQ", "Playwright", "Gemini", "PostgreSQL"],
-    tagline: "Ask questions about any website's layout and structure",
-    accent: "from-violet-500 to-purple-600",
-    index: "01",
-    description:
-      "A full-stack monorepo that scrapes websites with Playwright and uses Google Gemini to analyze UI design, hierarchy, and structure. Users can ask natural-language questions about any page — powered by a Turborepo setup with a Next.js frontend, Express + BullMQ job queue on the backend, and Drizzle ORM over PostgreSQL.",
-    highlights: [
-      "Turborepo monorepo with separate web, server, and db packages",
-      "Async scraping pipeline via BullMQ workers",
-      "Gemini AI for layout and design analysis",
-      "Handles bot protection and rate limiting gracefully",
-    ],
-  },
-  {
-    id: "hr-with-docker",
-    name: "HR Automation Platform",
+    id: "recruitment-erp",
+    name: "Autonomous AI Recruitment ERP",
     repo: "https://github.com/Ya5h10/hr-with-docker",
     language: "TypeScript",
-    stack: ["TypeScript", "Docker", "PostgreSQL", "Gemini"],
-    tagline: "End-to-end hiring automation that runs 10× faster",
-    accent: "from-blue-500 to-cyan-500",
-    index: "02",
+    year: "2025",
+    stack: ["React", "Redis", "Socket.io", "Gemini 2.5"],
+    tagline: "Live hiring dashboard with Gemini ranking and autonomous outreach",
+    accent: "from-sky-500 to-blue-600",
+    index: "01",
+    outcome: "90% resume–JD relevance match with realtime recruiter feeds",
     description:
-      "An HR automation application containerized with Docker that streamlines recruitment workflows — from candidate ingestion to AI-powered resume ranking. Built to handle high-throughput hiring pipelines with scalable backend services.",
+      "Full-stack hiring platform with a realtime dashboard (Socket.io + Redis) so recruiters see live scraping feeds and candidate ranking status without reloads. Gemini 2.5 Flash semantically ranks resumes against JDs (~90% relevance) while autonomous background agents handle outreach. Scraping aggregates LinkedIn candidates with Redis session caching for high-concurrency pipelines.",
     highlights: [
-      "Dockerized microservices architecture",
-      "AI-powered resume vs. job-description matching",
-      "Designed for production deployment at scale",
-      "Reduces manual HR process time significantly",
+      "Realtime dashboard via Socket.io and Redis — live scraping + ranking status",
+      "Gemini 2.5 Flash semantic resume-vs-JD ranking at ~90% relevance",
+      "Autonomous background agents for outreach automation",
+      "LinkedIn candidate aggregation with Redis-backed session/caching concurrency",
     ],
-  },
-  {
-    id: "website-editor-for-hr",
-    name: "Orbit Careers Builder",
-    repo: "https://github.com/Ya5h10/website-editor-for-hr",
-    language: "TypeScript",
-    stack: ["Next.js", "Supabase", "Tailwind", "Zod", "react-hook-form"],
-    tagline: "Mini-SaaS for branded careers pages",
-    accent: "from-indigo-500 to-blue-600",
-    index: "03",
-    description:
-      "Orbit lets recruiters log in, design public hiring pages with reusable content blocks, and manage open roles. Jobseekers browse a company directory and view live careers pages — all backed by Supabase Postgres and Storage.",
-    highlights: [
-      "Next.js App Router with TypeScript throughout",
-      "Drag-and-drop content block editor for recruiters",
-      "Supabase auth, database, and file storage",
-      "Public company directory for jobseekers",
+    process: [
+      "Push live state to recruiters instead of polling-heavy UIs.",
+      "Separate ranking/outreach agents from the interactive dashboard path.",
+      "Cache scrape sessions in Redis so concurrency does not melt the pipeline.",
     ],
   },
   {
     id: "gan",
-    name: "Facial Frontalization GAN",
+    name: "Frontal Face Generation Using GAN",
     repo: "https://github.com/Ya5h10/GAN",
     language: "Python",
-    stack: ["PyTorch", "Pix2Pix", "CycleGAN", "CUDA"],
-    tagline: "Generate frontal face views from profile images",
-    accent: "from-amber-500 to-orange-500",
-    index: "04",
+    year: "2025",
+    stack: ["PyTorch", "CUDA", "Computer Vision"],
+    tagline: "Pix2Pix & CycleGAN frontalization on CelebA-HQ",
+    accent: "from-slate-500 to-blue-600",
+    index: "02",
+    outcome: "30,000+ images; ~10% throughput gain on NVIDIA H100 training",
     description:
-      "A deep learning project implementing Pix2Pix and CycleGAN architectures to synthesize frontal face images from side-profile photos. Optimized preprocessing pipelines with CUDA multiprocessing for faster training on GPU hardware.",
+      "GAN pipeline (Pix2Pix & CycleGAN) processing over 30,000 images from CelebA-HQ. Training loops optimized on NVIDIA H100 GPUs with multiprocessing and mixed-precision training to increase throughput by 10%.",
     highlights: [
-      "Pix2Pix and CycleGAN model implementations",
-      "CUDA-optimized data preprocessing pipeline",
-      "Useful for face recognition preprocessing",
-      "Trained and evaluated on profile-to-frontal datasets",
+      "Pix2Pix and CycleGAN frontalization pipeline",
+      "30,000+ CelebA-HQ images processed",
+      "H100 training with multiprocessing + mixed precision (~10% throughput)",
+    ],
+    process: [
+      "Start from established GAN recipes, then optimize the data/training path.",
+      "Use mixed precision and multiprocessing where the GPU would otherwise wait.",
     ],
   },
   {
-    id: "email-track",
-    name: "Email Track",
-    repo: "https://github.com/Ya5h10/Email-track",
+    id: "upscaler",
+    name: "AI Image Upscaler SaaS",
+    repo: "https://github.com/Ya5h10/upscaler",
+    liveUrl: "https://upscaler.yashmakwana.com",
     language: "JavaScript",
-    stack: ["Node.js", "Email APIs", "Analytics"],
-    tagline: "Free email campaign open & reply tracking",
-    accent: "from-emerald-500 to-teal-500",
-    index: "05",
+    year: "2025",
+    stack: ["Python", "Docker", "React.js", "RunPod"],
+    tagline: "Real-ESRGAN on serverless GPUs with a product frontend",
+    accent: "from-blue-500 to-violet-500",
+    index: "03",
+    outcome: "Sub-3 second inference for 4× upscaling",
     description:
-      "A lightweight tool that gives you visibility into email campaigns — track who opens your emails, who replies, and engagement metrics without paying for expensive SaaS analytics platforms.",
+      "Scalable image enhancement service using Real-ESRGAN. Inference engine containerized with Docker and deployed on RunPod serverless GPUs, achieving sub-3 second inference for 4× upscaling, with a React product surface.",
     highlights: [
-      "Open and reply tracking for outbound campaigns",
-      "No paid third-party analytics required",
-      "Simple integration for outreach workflows",
-      "Useful for recruitment and sales pipelines",
+      "Real-ESRGAN inference containerized with Docker",
+      "RunPod serverless GPU deployment",
+      "Sub-3 second inference for 4× upscaling",
+      "Live product URL at upscaler.yashmakwana.com",
+    ],
+    process: [
+      "Containerize the model once; let serverless GPUs scale the rest.",
+      "Ship a URL recruiters can open — proof beats a notebook.",
     ],
   },
   {
-    id: "whatsapp-bot",
-    name: "WhatsApp Business Bot",
+    id: "whatsapp-agent",
+    name: "Voice-Interactive WhatsApp Agent",
     repo: "https://github.com/Ya5h10/Whatsapp-bot",
     language: "n8n",
-    stack: ["n8n", "WhatsApp Business API", "Workflow Automation"],
-    tagline: "Automated WhatsApp chatbot via n8n workflows",
-    accent: "from-green-500 to-lime-500",
-    index: "06",
+    year: "2025",
+    stack: ["n8n", "GPT-4", "Whisper API"],
+    tagline: "Realtime conversational agent without a traditional server backend",
+    accent: "from-violet-500 to-indigo-600",
+    index: "04",
+    outcome: "Fault-tolerant webhook workflows at scale via n8n",
     description:
-      "An n8n workflow deployment that integrates with WhatsApp Business API to handle automated customer and candidate conversations. Enables scalable messaging without building a custom bot infrastructure from scratch.",
+      "Realtime conversational agent integrating Whisper and GPT-4. Fault-tolerant n8n workflows handle webhook events at scale without a traditional server backend.",
     highlights: [
-      "n8n visual workflow automation",
-      "WhatsApp Business API integration",
-      "Deployable without custom server code",
-      "Handles inbound and outbound message flows",
+      "Whisper + GPT-4 voice/text conversational loop",
+      "n8n workflows for webhook-driven scale",
+      "No traditional always-on server backend required",
+    ],
+    process: [
+      "Prefer durable workflow graphs for webhook agents.",
+      "Keep STT (Whisper) and reasoning (GPT-4) as composable steps.",
     ],
   },
 ];

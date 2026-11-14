@@ -1,63 +1,42 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Github, Menu, X } from "lucide-react";
+import { profile } from "../../data/site";
+
+const links = [
+  { href: "/#work", label: "Work" },
+  { href: "/#experience", label: "Experience" },
+  { href: "/#stack", label: "Stack" },
+  { href: "/#arcade", label: "Arcade" },
+  { href: "/#shipped", label: "Shipped" },
+  { href: "/#contact", label: "Contact" },
+];
 
 export default function Navbar() {
-  const navRef = useRef<HTMLElement>(null);
-  const [onDark, setOnDark] = useState(false);
   const [mobileOpen, setMobileOpen] = useState(false);
-  const isContactPage = window.location.pathname === "/contact";
+  const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
-    const update = () => {
-      const nav = navRef.current;
-      if (!nav) return;
-
-      const rect = nav.getBoundingClientRect();
-      const x = rect.left + rect.width / 2;
-      const y = rect.top + rect.height / 2;
-
-      const elements = document.elementsFromPoint(x, y);
-      const behind = elements.find((el) => !nav.contains(el));
-      setOnDark(!!behind?.closest("[data-nav-theme='dark']"));
-    };
-
-    update();
-    window.addEventListener("scroll", update, { passive: true });
-    window.addEventListener("resize", update);
-    return () => {
-      window.removeEventListener("scroll", update);
-      window.removeEventListener("resize", update);
-    };
+    const onScroll = () => setScrolled(window.scrollY > 12);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
-
-  useEffect(() => {
-    setMobileOpen(false);
-  }, [isContactPage]);
-
-  const linkClass = `px-3 py-2 transition-colors duration-300 ${
-    onDark ? "text-gray-300 hover:text-white" : "text-gray-600 hover:text-black"
-  }`;
 
   return (
     <nav
-      ref={navRef}
-      className={`sticky top-2 max-w-7xl w-[94%] md:w-9/10 mb-2 mx-auto z-50 rounded-2xl
-        backdrop-blur-md backdrop-saturate-50 transition-colors duration-300
-        ${
-          onDark
-            ? "bg-white/10 border border-white/15"
-            : "bg-gray-600/10"
-        }`}
+      className={`sticky top-3 z-50 mx-auto w-[94%] max-w-6xl rounded-2xl border transition-[background,box-shadow,border-color] duration-300 ${
+        scrolled
+          ? "border-slate-200/80 bg-white/80 shadow-lg shadow-slate-200/40 backdrop-blur-xl"
+          : "border-transparent bg-white/40 backdrop-blur-md"
+      }`}
     >
-      <div className="container mx-auto px-3 py-3 md:p-4 flex flex-1 justify-between items-center">
+      <div className="flex items-center justify-between gap-3 px-3 py-3 md:px-5">
         <a
           href="/"
-          className={`font-bold text-base sm:text-lg md:text-xl px-2 md:px-6 transition-colors duration-300 ${
-            onDark ? "text-blue-300" : "text-blue-700"
-          }`}
+          className="font-display text-base font-bold tracking-tight text-slate-900 sm:text-lg"
         >
           Yash{" "}
-          <span className={onDark ? "text-white" : "text-gray-900"}>
+          <span className="bg-linear-to-r from-sky-600 to-violet-600 bg-clip-text text-transparent">
             Makwana
           </span>
         </a>
@@ -65,77 +44,57 @@ export default function Navbar() {
         <button
           type="button"
           onClick={() => setMobileOpen((prev) => !prev)}
-          className={`md:hidden p-2 rounded-lg ${onDark ? "text-gray-200" : "text-gray-700"}`}
+          className="rounded-xl p-2 text-slate-700 md:hidden"
           aria-label="Toggle navigation"
+          aria-expanded={mobileOpen}
         >
           {mobileOpen ? <X size={20} /> : <Menu size={20} />}
         </button>
 
-        <div className="hidden md:flex items-center">
+        <div className="hidden items-center gap-1 md:flex">
+          {links.map((link) => (
+            <a
+              key={link.href}
+              href={link.href}
+              className="rounded-xl px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:text-slate-900"
+            >
+              {link.label}
+            </a>
+          ))}
           <a
-            href="/#projects"
-            className={linkClass}
-          >
-            Projects
-          </a>
-          <a
-            href="/#websites"
-            className={linkClass}
-          >
-            Websites
-          </a>
-          <a
-            href="https://github.com/Ya5h10"
+            href={profile.githubUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className={`${linkClass} inline-flex items-center gap-1`}
+            className="ml-1 inline-flex items-center gap-1.5 rounded-xl px-3 py-2 text-sm font-medium text-slate-600 transition-colors hover:text-slate-900"
           >
-            <Github size={16} />
+            <Github size={15} />
             GitHub
           </a>
-          <a
-            href="/contact"
-            className={linkClass}
-          >
-            Contact
-          </a>
-          {!isContactPage && (
-            <a
-              href="#About"
-              className={linkClass}
-            >
-              About
-            </a>
-          )}
         </div>
       </div>
 
       {mobileOpen && (
-        <div className={`md:hidden border-t mt-2 ${onDark ? "border-white/10" : "border-black/10"} px-3 pb-4 pt-3 flex flex-col space-y-1`}>
-          <a href="/#projects" onClick={() => setMobileOpen(false)} className={`${linkClass} rounded-xl active:bg-gray-500/20 py-3 text-center font-medium`}>
-            Projects
-          </a>
-          <a href="/#websites" onClick={() => setMobileOpen(false)} className={`${linkClass} rounded-xl active:bg-gray-500/20 py-3 text-center font-medium`}>
-            Websites
-          </a>
+        <div className="flex flex-col gap-1 border-t border-slate-200/70 px-3 pb-4 pt-2 md:hidden">
+          {links.map((link) => (
+            <a
+              key={link.href}
+              href={link.href}
+              onClick={() => setMobileOpen(false)}
+              className="rounded-xl px-3 py-3 text-center text-sm font-medium text-slate-700 active:bg-slate-100"
+            >
+              {link.label}
+            </a>
+          ))}
           <a
-            href="https://github.com/Ya5h10"
+            href={profile.githubUrl}
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => setMobileOpen(false)}
-            className={`${linkClass} rounded-xl active:bg-gray-500/20 py-3 flex justify-center items-center gap-2 font-medium`}
+            className="inline-flex items-center justify-center gap-2 rounded-xl px-3 py-3 text-sm font-medium text-slate-700 active:bg-slate-100"
           >
-            <Github size={18} />
+            <Github size={16} />
             GitHub
           </a>
-          <a href="/contact" onClick={() => setMobileOpen(false)} className={`${linkClass} rounded-xl active:bg-gray-500/20 py-3 text-center font-medium`}>
-            Contact
-          </a>
-          {!isContactPage && (
-            <a href="#About" onClick={() => setMobileOpen(false)} className={`${linkClass} rounded-xl active:bg-gray-500/20 py-3 text-center font-medium`}>
-              About
-            </a>
-          )}
         </div>
       )}
     </nav>
