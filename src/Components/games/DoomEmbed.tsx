@@ -40,9 +40,47 @@ export default function DoomEmbed() {
     if (!started) return;
     const t = window.setTimeout(focusGame, 400);
     const t2 = window.setTimeout(focusGame, 1200);
+
+    // Bridge keys from the parent page into the iframe so WASD works even if
+    // focus briefly leaves the embed (common after clicking UI chrome).
+    const forward = (type: "keydown" | "keyup") => (e: KeyboardEvent) => {
+      const frame = iframeRef.current;
+      const win = frame?.contentWindow;
+      if (!win) return;
+      const target = e.target as Node | null;
+      if (target && frame?.contains(target)) return; // already inside iframe
+      win.postMessage(
+        {
+          type: "doom-key",
+          eventType: type,
+          key: e.key,
+          code: e.code,
+          repeat: e.repeat,
+        },
+        "*",
+      );
+      // Keep browser from scrolling on arrows/space while playing
+      if (
+        ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " ", "Space"].includes(
+          e.key,
+        ) ||
+        ["KeyW", "KeyA", "KeyS", "KeyD", "ControlLeft", "ControlRight"].includes(
+          e.code,
+        )
+      ) {
+        e.preventDefault();
+      }
+    };
+    const onDown = forward("keydown");
+    const onUp = forward("keyup");
+    window.addEventListener("keydown", onDown, true);
+    window.addEventListener("keyup", onUp, true);
+
     return () => {
       window.clearTimeout(t);
       window.clearTimeout(t2);
+      window.removeEventListener("keydown", onDown, true);
+      window.removeEventListener("keyup", onUp, true);
     };
   }, [started]);
 

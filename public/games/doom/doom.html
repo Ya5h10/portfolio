@@ -219,9 +219,35 @@
           document.addEventListener("pointerdown", focusCanvas);
           window.addEventListener("focus", focusCanvas);
 
-          // Parent page can request focus
+          // Parent page can request focus or forward keyboard events
           window.addEventListener("message", function (ev) {
-            if (ev.data && ev.data.type === "doom-focus") focusCanvas();
+            if (!ev.data) return;
+            if (ev.data.type === "doom-focus") {
+              focusCanvas();
+              return;
+            }
+            if (ev.data.type === "doom-key" && exports) {
+              const fake = {
+                key: ev.data.key,
+                code: ev.data.code,
+                repeat: !!ev.data.repeat,
+                stopPropagation: function () {},
+                preventDefault: function () {},
+              };
+              const doomKey = convertKeyEventToDoomKey(fake, keyMap);
+              if (doomKey === null) return;
+              if (ev.data.eventType === "keydown") {
+                if (!fake.repeat && !pressed.has(doomKey)) {
+                  pressed.add(doomKey);
+                  exports.reportKeyDown(doomKey);
+                }
+              } else if (ev.data.eventType === "keyup") {
+                if (pressed.has(doomKey)) {
+                  pressed.delete(doomKey);
+                  exports.reportKeyUp(doomKey);
+                }
+              }
+            }
           });
 
           exports.initGame();
