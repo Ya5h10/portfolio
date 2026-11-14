@@ -78,9 +78,9 @@ export default function AgentQuest() {
           </p>
         </motion.div>
 
-        <div className="grid gap-10 lg:grid-cols-[1.05fr_0.95fr] lg:gap-12">
-          <div className="rounded-[1.75rem] border border-slate-200/80 bg-white/75 p-5 shadow-lg shadow-slate-200/40 backdrop-blur-sm sm:p-8">
-            <div className="mb-8 flex flex-wrap items-center justify-between gap-4">
+        <div className="grid gap-12 lg:grid-cols-[1.05fr_0.95fr] lg:gap-14">
+          <div className="rounded-[1.75rem] border border-slate-200/80 bg-white/75 p-6 shadow-lg shadow-slate-200/40 backdrop-blur-sm sm:p-9">
+            <div className="mb-10 flex flex-wrap items-center justify-between gap-5">
               <div>
                 <p className="text-xs font-semibold tracking-[0.16em] text-slate-400 uppercase">
                   Mission XP
@@ -118,7 +118,7 @@ export default function AgentQuest() {
 
             <div className="relative">
               <div className="pointer-events-none absolute top-[1.65rem] right-6 left-6 hidden h-0.5 bg-linear-to-r from-sky-200 via-violet-200 to-blue-200 sm:block" />
-              <ol className="grid grid-cols-2 gap-4 sm:grid-cols-5 sm:gap-3">
+              <ol className="grid grid-cols-2 gap-5 sm:grid-cols-5 sm:gap-4">
                 {questNodes.map((node, index) => {
                   const isActive = node.id === activeId;
                   const isUnlocked = unlocked.includes(node.id);
@@ -129,7 +129,7 @@ export default function AgentQuest() {
                         whileHover={{ y: -3 }}
                         whileTap={{ scale: 0.96 }}
                         onClick={() => runStage(node.id)}
-                        className={`relative w-full rounded-2xl border px-3 py-4 text-left transition-[box-shadow,border-color,background] ${
+                        className={`relative w-full rounded-2xl border px-3.5 py-5 text-left transition-[box-shadow,border-color,background] ${
                           isActive
                             ? "border-sky-300 bg-white shadow-md shadow-sky-100"
                             : isUnlocked
@@ -138,14 +138,14 @@ export default function AgentQuest() {
                         }`}
                       >
                         <span
-                          className={`mb-3 flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold text-white bg-linear-to-br ${colorMap[node.color]}`}
+                          className={`mb-4 flex h-9 w-9 items-center justify-center rounded-full text-xs font-bold text-white bg-linear-to-br ${colorMap[node.color]}`}
                         >
                           {node.step}
                         </span>
-                        <p className="font-display text-sm font-bold text-slate-900">
+                        <p className="font-display text-sm leading-snug font-bold text-slate-900">
                           {node.title}
                         </p>
-                        <p className="mt-1 text-xs leading-5 text-slate-500">
+                        <p className="mt-2 text-xs leading-5 text-slate-500">
                           {node.subtitle}
                         </p>
                         {isUnlocked && (
@@ -173,19 +173,19 @@ export default function AgentQuest() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -8 }}
                 transition={{ duration: 0.22 }}
-                className="mt-8 rounded-2xl border border-slate-200 bg-slate-950 px-5 py-5 text-left sm:mt-10 sm:px-6 sm:py-6"
+                className="mt-10 rounded-2xl border border-slate-200 bg-slate-950 px-5 py-6 text-left sm:mt-12 sm:px-7 sm:py-7"
               >
                 <p className="font-mono text-[11px] tracking-wide text-sky-300 uppercase">
                   agent://recruitment-loop/{active.id}
                 </p>
-                <p className="mt-4 text-sm leading-7 text-slate-200 sm:text-[15px]">
+                <p className="mt-5 text-sm leading-8 text-slate-200 sm:text-[15px]">
                   {active.prompt}
                 </p>
                 <motion.button
                   type="button"
                   whileTap={{ scale: 0.98 }}
                   onClick={() => runStage(active.id)}
-                  className={`mt-5 inline-flex items-center gap-2 rounded-xl px-4 py-3 text-sm font-semibold text-white bg-linear-to-r ${colorMap[active.color]}`}
+                  className={`mt-6 inline-flex items-center gap-2 rounded-xl px-4 py-3.5 text-sm font-semibold text-white bg-linear-to-r ${colorMap[active.color]}`}
                 >
                   {unlocked.includes(active.id) ? "Replay stage" : "Run stage"}
                   <ArrowRight size={15} />
@@ -209,9 +209,9 @@ export default function AgentQuest() {
             </AnimatePresence>
           </div>
 
-          <div className="flex flex-col gap-6">
-            <div className="rounded-[1.75rem] border border-slate-200/80 bg-white/80 p-5 shadow-md shadow-slate-200/30 sm:p-7">
-              <div className="mb-5 flex items-center justify-between gap-3">
+          <div className="flex flex-col gap-8">
+            <div className="rounded-[1.75rem] border border-slate-200/80 bg-white/80 p-6 shadow-md shadow-slate-200/30 sm:p-8">
+              <div className="mb-6 flex items-center justify-between gap-3">
                 <h3 className="font-display text-lg font-bold text-slate-900">
                   Mission log
                 </h3>
@@ -221,11 +221,11 @@ export default function AgentQuest() {
                   </span>
                 )}
               </div>
-              <ul className="space-y-4">
+              <ul className="space-y-5">
                 {log.map((line, i) => (
                   <li
                     key={`${line}-${i}`}
-                    className={`text-sm leading-7 ${
+                    className={`text-sm leading-8 ${
                       i === 0 ? "text-slate-800" : "text-slate-500"
                     }`}
                   >
@@ -235,25 +235,25 @@ export default function AgentQuest() {
               </ul>
             </div>
 
-            <div className="rounded-[1.75rem] border border-dashed border-sky-200 bg-linear-to-br from-sky-50/90 to-violet-50/70 p-5 sm:p-7">
+            <div className="rounded-[1.75rem] border border-dashed border-sky-200 bg-linear-to-br from-sky-50/90 to-violet-50/70 p-6 sm:p-8">
               <p className="text-xs font-semibold tracking-[0.16em] text-sky-700 uppercase">
                 Unlocked proof
               </p>
-              <ul className="mt-5 space-y-3">
+              <ul className="mt-6 space-y-4">
                 {questNodes.map((node) => {
                   const project = projects.find((p) => p.id === node.projectId);
                   const open = unlocked.includes(node.id);
                   return (
                     <li
                       key={node.id}
-                      className={`rounded-xl px-4 py-3 transition-colors ${
+                      className={`rounded-xl px-4 py-4 transition-colors ${
                         open ? "bg-white shadow-sm" : "bg-white/40"
                       }`}
                     >
                       <p className="text-sm font-semibold text-slate-900">
                         {node.step} · {node.title}
                       </p>
-                      <p className="mt-1 text-sm leading-6 text-slate-600">
+                      <p className="mt-2 text-sm leading-7 text-slate-600">
                         {open
                           ? project?.name
                           : "Locked — run the stage to reveal the linked project."}
