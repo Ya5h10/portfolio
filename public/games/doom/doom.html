@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <!--
-  Doom shareware in-browser via doom.wasm (jacobenget/doom.wasm).
-  Keyboard listeners are on window so focus works reliably inside an iframe.
+  Doom shareware via doom.wasm (jacobenget/doom.wasm).
+  Engine exposes keyboard only — mouse look is emulated as turn keys;
+  mouse buttons map to fire/use. Esc (or Exit) returns to the portfolio.
 -->
 <html lang="en">
   <head>
@@ -16,6 +17,7 @@
         height: 100%;
         overflow: hidden;
         font-family: system-ui, sans-serif;
+        user-select: none;
       }
       #wrap {
         position: relative;
@@ -34,21 +36,18 @@
         height: auto;
         image-rendering: pixelated;
         outline: none;
-        cursor: crosshair;
-        opacity: 0.85;
+        cursor: none;
+        opacity: 0.9;
       }
-      canvas#DoomGame:focus {
-        opacity: 1;
-      }
+      canvas#DoomGame:focus { opacity: 1; }
       #hint {
         position: absolute;
-        left: 0;
-        right: 0;
-        bottom: 0;
-        padding: 8px 12px;
-        background: rgba(0,0,0,0.72);
+        left: 0; right: 0; bottom: 0;
+        padding: 10px 12px;
+        background: rgba(0,0,0,0.78);
         color: #cbd5e1;
         font-size: 12px;
+        line-height: 1.45;
         text-align: center;
         pointer-events: none;
         transition: opacity 0.3s;
@@ -56,14 +55,28 @@
       #hint.hidden { opacity: 0; }
       #status {
         position: absolute;
-        top: 10px;
-        left: 10px;
+        top: 10px; left: 10px;
         color: #7dd3fc;
         font-size: 12px;
         background: rgba(0,0,0,0.55);
         padding: 4px 8px;
         border-radius: 6px;
+        pointer-events: none;
       }
+      #exitBtn {
+        position: absolute;
+        top: 10px; right: 10px;
+        z-index: 5;
+        border: 1px solid #475569;
+        background: rgba(15,23,42,0.85);
+        color: #e2e8f0;
+        font-size: 12px;
+        font-weight: 600;
+        padding: 6px 10px;
+        border-radius: 8px;
+        cursor: pointer;
+      }
+      #exitBtn:hover { background: rgba(51,65,85,0.95); }
     </style>
     <script type="text/javascript">
       function loadDoomGame(canvas) {
@@ -72,13 +85,33 @@
         let ctx = canvas.getContext("2d");
         let scratchSpaceImageData = null;
         const pressed = new Set();
+        let keyMap = null;
+        let turnLeftHeld = false;
+        let turnRightHeld = false;
+        let mouseAccX = 0;
+        const MOUSE_TURN_THRESH = 6;
+
+        function requestExit() {
+          try {
+            if (document.pointerLockElement) document.exitPointerLock();
+          } catch (_) {}
+          for (const k of pressed) {
+            try { exports && exports.reportKeyUp(k); } catch (_) {}
+          }
+          pressed.clear();
+          turnLeftHeld = false;
+          turnRightHeld = false;
+          if (window.parent && window.parent !== window) {
+            window.parent.postMessage({ type: "doom-exit" }, "*");
+          }
+        }
 
         function onGameInit(width, height) {
           canvas.width = width;
           canvas.height = height;
           scratchSpaceImageData = ctx.createImageData(width, height);
           const status = document.getElementById("status");
-          if (status) status.textContent = "Ready — click game, then use keys";
+          if (status) status.textContent = "Click to capture mouse · Esc exits";
           focusCanvas();
         }
 
@@ -107,14 +140,6 @@
           return dec.decode(buffer8.slice(offsetIntoMemory, offsetIntoMemory + stringByteLength));
         }
 
-        function onInfoMessage(messagePtr, length) {
-          console.log("[Doom]", readModuleMemoryAsUtf8String(moduleInstanceMemory, messagePtr, length));
-        }
-
-        function onErrorMessage(messagePtr, length) {
-          console.error("[Doom]", readModuleMemoryAsUtf8String(moduleInstanceMemory, messagePtr, length));
-        }
-
         const imports = {
           loading: {
             onGameInit: onGameInit,
@@ -124,8 +149,10 @@
           ui: { drawFrame: drawFrame },
           runtimeControl: { timeInMilliseconds: timeInMilliseconds },
           console: {
-            onInfoMessage: onInfoMessage,
-            onErrorMessage: onErrorMessage,
+            onInfoMessage: (ptr, len) =>
+              console.log("[Doom]", readModuleMemoryAsUtf8String(moduleInstanceMemory, ptr, len)),
+            onErrorMessage: (ptr, len) =>
+              console.error("[Doom]", readModuleMemoryAsUtf8String(moduleInstanceMemory, ptr, len)),
           },
           gameSaving: {
             sizeOfSaveGame: () => 0,
@@ -135,13 +162,14 @@
         };
 
         function focusCanvas() {
-          try {
-            canvas.focus({ preventScroll: true });
-          } catch (_) {
-            canvas.focus();
-          }
+          try { canvas.focus({ preventScroll: true }); } catch (_) { canvas.focus(); }
           const hint = document.getElementById("hint");
           if (hint) hint.classList.add("hidden");
+          try {
+            if (document.pointerLockElement !== canvas) {
+              canvas.requestPointerLock?.();
+            }
+          } catch (_) {}
         }
 
         function buildKeyMap(ex) {
@@ -164,90 +192,197 @@
             [" ", ex.KEY_USE],
             ["Shift", ex.KEY_SHIFT],
             ["Tab", ex.KEY_TAB],
-            ["Escape", ex.KEY_ESCAPE],
             ["Enter", ex.KEY_ENTER],
             ["Backspace", ex.KEY_BACKSPACE],
             ["Alt", ex.KEY_ALT],
           ]);
         }
 
-        function convertKeyEventToDoomKey(event, keyMap) {
+        function keyDown(doomKey) {
+          if (doomKey == null || pressed.has(doomKey)) return;
+          pressed.add(doomKey);
+          exports.reportKeyDown(doomKey);
+        }
+
+        function keyUp(doomKey) {
+          if (doomKey == null || !pressed.has(doomKey)) return;
+          pressed.delete(doomKey);
+          exports.reportKeyUp(doomKey);
+        }
+
+        function convertKeyEventToDoomKey(event) {
           let correspondingDoomKey = null;
           if (keyMap.has(event.key)) {
             correspondingDoomKey = keyMap.get(event.key);
-          } else if (event.key.length === 1) {
+          } else if (event.key && event.key.length === 1) {
             correspondingDoomKey = event.key.toLowerCase().charCodeAt(0);
           }
-          if (correspondingDoomKey !== null) {
-            event.stopPropagation();
-            event.preventDefault();
-          }
           return correspondingDoomKey;
+        }
+
+        function setTurn(dir, on) {
+          if (!exports || !keyMap) return;
+          const left = exports.KEY_LEFTARROW;
+          const right = exports.KEY_RIGHTARROW;
+          if (dir === "left") {
+            if (on && !turnLeftHeld) { turnLeftHeld = true; keyDown(left); }
+            if (!on && turnLeftHeld) { turnLeftHeld = false; keyUp(left); }
+          } else {
+            if (on && !turnRightHeld) { turnRightHeld = true; keyDown(right); }
+            if (!on && turnRightHeld) { turnRightHeld = false; keyUp(right); }
+          }
+        }
+
+        function applyMouseLook(dx) {
+          mouseAccX += dx;
+          // Hold turn while mouse is moving hard enough; release when quiet.
+          if (mouseAccX <= -MOUSE_TURN_THRESH) {
+            setTurn("left", true);
+            setTurn("right", false);
+            mouseAccX = Math.max(mouseAccX, -MOUSE_TURN_THRESH * 2);
+          } else if (mouseAccX >= MOUSE_TURN_THRESH) {
+            setTurn("right", true);
+            setTurn("left", false);
+            mouseAccX = Math.min(mouseAccX, MOUSE_TURN_THRESH * 2);
+          } else if (Math.abs(mouseAccX) < MOUSE_TURN_THRESH * 0.35) {
+            setTurn("left", false);
+            setTurn("right", false);
+          }
+          // Decay so look stops after movement ends
+          mouseAccX *= 0.55;
         }
 
         WebAssembly.instantiateStreaming(fetch("assets/doom.wasm"), imports).then(({ instance }) => {
           exports = instance.exports;
           moduleInstanceMemory = exports.memory;
-          const keyMap = buildKeyMap(exports);
+          keyMap = buildKeyMap(exports);
 
-          // Window-level listeners so keys work as long as the iframe document is focused
           window.addEventListener("keydown", function (event) {
-            if (event.repeat) return;
-            const doomKey = convertKeyEventToDoomKey(event, keyMap);
-            if (doomKey !== null && !pressed.has(doomKey)) {
-              pressed.add(doomKey);
-              exports.reportKeyDown(doomKey);
+            if (event.key === "Escape" || event.code === "Escape") {
+              event.preventDefault();
+              event.stopPropagation();
+              requestExit();
+              return;
             }
-          });
-          window.addEventListener("keyup", function (event) {
-            const doomKey = convertKeyEventToDoomKey(event, keyMap);
+            if (event.repeat) return;
+            const doomKey = convertKeyEventToDoomKey(event);
             if (doomKey !== null) {
-              pressed.delete(doomKey);
-              exports.reportKeyUp(doomKey);
+              event.preventDefault();
+              keyDown(doomKey);
             }
           });
 
-          // Release all keys if focus leaves the iframe
+          window.addEventListener("keyup", function (event) {
+            if (event.key === "Escape" || event.code === "Escape") return;
+            const doomKey = convertKeyEventToDoomKey(event);
+            if (doomKey !== null) {
+              event.preventDefault();
+              keyUp(doomKey);
+            }
+          });
+
           window.addEventListener("blur", function () {
-            for (const k of pressed) exports.reportKeyUp(k);
-            pressed.clear();
+            for (const k of [...pressed]) keyUp(k);
+            setTurn("left", false);
+            setTurn("right", false);
+            mouseAccX = 0;
             const hint = document.getElementById("hint");
             if (hint) hint.classList.remove("hidden");
           });
 
-          canvas.addEventListener("pointerdown", focusCanvas);
-          document.addEventListener("pointerdown", focusCanvas);
-          window.addEventListener("focus", focusCanvas);
+          canvas.addEventListener("click", function () {
+            focusCanvas();
+          });
 
-          // Parent page can request focus or forward keyboard events
+          canvas.addEventListener("mousemove", function (e) {
+            if (document.pointerLockElement !== canvas) return;
+            applyMouseLook(e.movementX || 0);
+          });
+
+          // Mouse fire / use (vanilla-style: LMB fire, RMB use)
+          canvas.addEventListener("mousedown", function (e) {
+            focusCanvas();
+            if (!exports) return;
+            if (e.button === 0) {
+              e.preventDefault();
+              keyDown(exports.KEY_FIRE);
+            } else if (e.button === 2) {
+              e.preventDefault();
+              keyDown(exports.KEY_USE);
+            }
+          });
+          canvas.addEventListener("mouseup", function (e) {
+            if (!exports) return;
+            if (e.button === 0) keyUp(exports.KEY_FIRE);
+            if (e.button === 2) keyUp(exports.KEY_USE);
+          });
+          canvas.addEventListener("contextmenu", function (e) {
+            e.preventDefault();
+          });
+
+          document.addEventListener("pointerlockchange", function () {
+            const status = document.getElementById("status");
+            if (document.pointerLockElement === canvas) {
+              if (status) status.textContent = "Mouse captured · Esc exits to portfolio";
+            } else {
+              setTurn("left", false);
+              setTurn("right", false);
+              mouseAccX = 0;
+              if (status) status.textContent = "Click game for mouse look · Esc exits";
+              const hint = document.getElementById("hint");
+              if (hint) hint.classList.remove("hidden");
+            }
+          });
+
+          // Decay turn hold even if mousemove stops
+          setInterval(function () {
+            if (document.pointerLockElement !== canvas) return;
+            if (Math.abs(mouseAccX) < 0.5) {
+              setTurn("left", false);
+              setTurn("right", false);
+              mouseAccX = 0;
+            } else {
+              mouseAccX *= 0.7;
+            }
+          }, 40);
+
           window.addEventListener("message", function (ev) {
             if (!ev.data) return;
             if (ev.data.type === "doom-focus") {
               focusCanvas();
               return;
             }
+            if (ev.data.type === "doom-exit") {
+              requestExit();
+              return;
+            }
             if (ev.data.type === "doom-key" && exports) {
-              const fake = {
-                key: ev.data.key,
-                code: ev.data.code,
-                repeat: !!ev.data.repeat,
-                stopPropagation: function () {},
-                preventDefault: function () {},
-              };
-              const doomKey = convertKeyEventToDoomKey(fake, keyMap);
+              if (ev.data.key === "Escape" || ev.data.code === "Escape") {
+                requestExit();
+                return;
+              }
+              const fake = { key: ev.data.key, code: ev.data.code };
+              const doomKey = convertKeyEventToDoomKey(fake);
               if (doomKey === null) return;
               if (ev.data.eventType === "keydown") {
-                if (!fake.repeat && !pressed.has(doomKey)) {
-                  pressed.add(doomKey);
-                  exports.reportKeyDown(doomKey);
-                }
+                if (!ev.data.repeat) keyDown(doomKey);
               } else if (ev.data.eventType === "keyup") {
-                if (pressed.has(doomKey)) {
-                  pressed.delete(doomKey);
-                  exports.reportKeyUp(doomKey);
-                }
+                keyUp(doomKey);
               }
             }
+            if (ev.data.type === "doom-mouse" && exports) {
+              if (ev.data.dx) applyMouseLook(ev.data.dx);
+              if (ev.data.button === 0 && ev.data.down) keyDown(exports.KEY_FIRE);
+              if (ev.data.button === 0 && ev.data.down === false) keyUp(exports.KEY_FIRE);
+              if (ev.data.button === 2 && ev.data.down) keyDown(exports.KEY_USE);
+              if (ev.data.button === 2 && ev.data.down === false) keyUp(exports.KEY_USE);
+            }
+          });
+
+          document.getElementById("exitBtn")?.addEventListener("click", function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            requestExit();
           });
 
           exports.initGame();
@@ -261,16 +396,19 @@
       }
 
       addEventListener("load", function () {
-        const canvas = document.getElementById("DoomGame");
-        loadDoomGame(canvas);
+        loadDoomGame(document.getElementById("DoomGame"));
       });
     </script>
   </head>
   <body>
     <div id="wrap">
       <div id="status">Loading Doom…</div>
+      <button id="exitBtn" type="button" title="Exit to portfolio (Esc)">Exit · Esc</button>
       <canvas id="DoomGame" tabindex="0"></canvas>
-      <div id="hint">Click here for keyboard · WASD / arrows move · Ctrl fire · Space use · Enter select</div>
+      <div id="hint">
+        Click to capture mouse · Move mouse to look · LMB fire · RMB / Space use ·
+        WASD / arrows move · Esc or Exit → portfolio
+      </div>
     </div>
   </body>
 </html>

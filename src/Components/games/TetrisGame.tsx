@@ -3,37 +3,37 @@ import { useCallback, useEffect, useRef, useState } from "react";
 const COLS = 10;
 const ROWS = 20;
 const BLOCK = 28;
-const START_DROP_MS = 480;
-const MIN_DROP_MS = 140;
-const LOCK_DELAY_MS = 300;
-const DRAW_HZ = 1000 / 60;
+const START_DROP_MS = 500;
+const MIN_DROP_MS = 120;
+const LOCK_DELAY_MS = 450;
+const MAX_LOCK_RESETS = 12;
 
 const SHAPES: number[][][] = [
-  [[1, 1, 1, 1]],
+  [[1, 1, 1, 1]], // I
   [
     [1, 1],
     [1, 1],
-  ],
+  ], // O
   [
     [0, 1, 0],
     [1, 1, 1],
-  ],
+  ], // T
   [
     [1, 0, 0],
     [1, 1, 1],
-  ],
+  ], // J
   [
     [0, 0, 1],
     [1, 1, 1],
-  ],
+  ], // L
   [
     [1, 1, 0],
     [0, 1, 1],
-  ],
+  ], // S
   [
     [0, 1, 1],
     [1, 1, 0],
-  ],
+  ], // Z
 ];
 
 const COLORS = [
@@ -65,13 +65,25 @@ function emptyBoard(): Cell[][] {
   return Array.from({ length: ROWS }, () => Array(COLS).fill(0));
 }
 
-function randomPiece(): Piece {
-  const index = Math.floor(Math.random() * SHAPES.length);
-  return {
-    shape: SHAPES[index].map((row) => [...row]),
-    color: index + 1,
-    x: 3,
-    y: 0,
+function bagPiece(): () => Piece {
+  let bag: number[] = [];
+  return () => {
+    if (bag.length === 0) {
+      bag = [0, 1, 2, 3, 4, 5, 6];
+      for (let i = bag.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [bag[i], bag[j]] = [bag[j], bag[i]];
+      }
+    }
+    const index = bag.pop()!;
+    const shape = SHAPES[index].map((row) => [...row]);
+    const width = shape[0].length;
+    return {
+      shape,
+      color: index + 1,
+      x: Math.floor((COLS - width) / 2),
+      y: 0,
+    };
   };
 }
 
@@ -88,26 +100,37 @@ function collides(board: Cell[][], shape: number[][], ox: number, oy: number) {
   return false;
 }
 
+function isGrounded(board: Cell[][], p: Piece) {
+  return collides(board, p.shape, p.x, p.y + 1);
+}
+
 export default function TetrisGame() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const boardRef = useRef<Cell[][]>(emptyBoard());
   const pieceRef = useRef<Piece | null>(null);
+  const nextPieceFn = useRef(bagPiece());
   const runningRef = useRef(false);
   const gameOverRef = useRef(false);
   const dropMsRef = useRef(START_DROP_MS);
-  const lockUntilRef = useRef(0);
-  const lockingRef = useRef(false);
+  const dropAccRef = useRef(0);
+  const lockAccRef = useRef(0);
+  const lockResetsRef = useRef(0);
   const linesRef = useRef(0);
   const scoreRef = useRef(0);
-  const gravityTimerRef = useRef<number | null>(null);
-  const drawTimerRef = useRef<number | null>(null);
-  const dropAccRef = useRef(0);
-  const lastGravityTsRef = useRef(0);
+  const rafRef = useRef(0);
+  const lastTsRef = useRef(0);
 
   const [score, setScore] = useState(0);
   const [lines, setLines] = useState(0);
   const [running, setRunning] = useState(false);
   const [gameOver, setGameOver] = useState(false);
+
+  const syncHud = useCallback(() => {
+    setScore(scoreRef.current);
+    setLines(linesRef.current);
+    setRunning(runningRef.current);
+    setGameOver(gameOverRef.current);
+  }, []);
 
   const draw = useCallback(() => {
     const canvas = canvasRef.current;
@@ -119,6 +142,7 @@ export default function TetrisGame() {
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     const paintCell = (x: number, y: number, colorIdx: number) => {
+      if (y < 0) return;
       ctx.fillStyle = COLORS[(colorIdx - 1) % COLORS.length];
       ctx.fillRect(x * BLOCK + 1, y * BLOCK + 1, BLOCK - 2, BLOCK - 2);
     };
@@ -152,6 +176,18 @@ export default function TetrisGame() {
       ctx.lineTo(COLS * BLOCK, y * BLOCK);
       ctx.stroke();
     }
+
+    if (gameOverRef.current) {
+      ctx.fillStyle = "rgba(15,23,42,0.72)";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#fda4af";
+      ctx.font = "bold 22px Syne, sans-serif";
+      ctx.textAlign = "center";
+      ctx.fillText("GAME OVER", canvas.width / 2, canvas.height / 2 - 8);
+      ctx.fillStyle = "#e2e8f0";
+      ctx.font = "14px Figtree, sans-serif";
+      ctx.fillText("Restart to play again", canvas.width / 2, canvas.height / 2 + 18);
+    }
   }, []);
 
   const clearLines = useCallback(() => {
@@ -168,17 +204,38 @@ export default function TetrisGame() {
     if (cleared > 0) {
       linesRef.current += cleared;
       const level = Math.floor(linesRef.current / 10) + 1;
-      const gained = [0, 100, 300, 500, 800][cleared] * level;
-      scoreRef.current += gained;
+      scoreRef.current += [0, 100, 300, 500, 800][cleared] * level;
       dropMsRef.current = Math.max(
         MIN_DROP_MS,
-        START_DROP_MS - Math.floor(linesRef.current / 5) * 40,
+        START_DROP_MS - Math.floor(linesRef.current / 5) * 45,
       );
-      setLines(linesRef.current);
-      setScore(scoreRef.current);
+      syncHud();
     }
     return cleared;
-  }, []);
+  }, [syncHud]);
+
+  const endGame = useCallback(() => {
+    gameOverRef.current = true;
+    runningRef.current = false;
+    syncHud();
+    draw();
+  }, [draw, syncHud]);
+
+  const spawn = useCallback(() => {
+    if (gameOverRef.current) return false;
+    const next = nextPieceFn.current();
+    // If spawn cell is blocked, the stack reached the top — game over.
+    if (collides(boardRef.current, next.shape, next.x, next.y)) {
+      pieceRef.current = next;
+      endGame();
+      return false;
+    }
+    pieceRef.current = next;
+    dropAccRef.current = 0;
+    lockAccRef.current = 0;
+    lockResetsRef.current = 0;
+    return true;
+  }, [endGame]);
 
   const mergePiece = useCallback(() => {
     const p = pieceRef.current;
@@ -189,61 +246,63 @@ export default function TetrisGame() {
         if (!p.shape[y][x]) continue;
         const ny = p.y + y;
         const nx = p.x + x;
-        if (ny >= 0 && ny < ROWS && nx >= 0 && nx < COLS) {
-          board[ny][nx] = p.color;
+        if (ny < 0) {
+          // Locked above the visible field → top-out
+          pieceRef.current = null;
+          endGame();
+          return;
         }
+        if (ny < ROWS && nx >= 0 && nx < COLS) board[ny][nx] = p.color;
       }
     }
     boardRef.current = board;
     pieceRef.current = null;
-    lockingRef.current = false;
-    lockUntilRef.current = 0;
+    lockAccRef.current = 0;
+    lockResetsRef.current = 0;
     clearLines();
-  }, [clearLines]);
+  }, [clearLines, endGame]);
 
-  const spawn = useCallback(() => {
-    const next = randomPiece();
-    if (collides(boardRef.current, next.shape, next.x, next.y)) {
-      pieceRef.current = next;
-      gameOverRef.current = true;
-      runningRef.current = false;
-      setGameOver(true);
-      setRunning(false);
-      return;
-    }
-    pieceRef.current = next;
-    lockingRef.current = false;
-    lockUntilRef.current = 0;
-  }, []);
+  const lockAndSpawn = useCallback(() => {
+    mergePiece();
+    if (!gameOverRef.current) spawn();
+  }, [mergePiece, spawn]);
 
-  const tryMove = useCallback((dx: number, dy: number) => {
-    if (!runningRef.current || gameOverRef.current) return false;
-    const p = pieceRef.current;
-    if (!p) return false;
-    if (!collides(boardRef.current, p.shape, p.x + dx, p.y + dy)) {
+  const tryMove = useCallback(
+    (dx: number, dy: number) => {
+      if (!runningRef.current || gameOverRef.current) return false;
+      const p = pieceRef.current;
+      if (!p) return false;
+      if (collides(boardRef.current, p.shape, p.x + dx, p.y + dy)) return false;
       p.x += dx;
       p.y += dy;
       if (dy !== 0) {
-        lockingRef.current = false;
-        lockUntilRef.current = 0;
+        lockAccRef.current = 0;
+        lockResetsRef.current = 0;
+      } else if (isGrounded(boardRef.current, p)) {
+        // Lateral move while grounded extends lock a bit, but capped.
+        if (lockResetsRef.current < MAX_LOCK_RESETS) {
+          lockAccRef.current = 0;
+          lockResetsRef.current += 1;
+        }
       }
       return true;
-    }
-    return false;
-  }, []);
+    },
+    [],
+  );
 
   const tryRotate = useCallback(() => {
     if (!runningRef.current || gameOverRef.current) return;
     const p = pieceRef.current;
     if (!p) return;
     const rotated = rotate(p.shape);
-    const kicks = [0, -1, 1, -2, 2];
-    for (const kick of kicks) {
+    for (const kick of [0, -1, 1, -2, 2]) {
       if (!collides(boardRef.current, rotated, p.x + kick, p.y)) {
         p.shape = rotated;
         p.x += kick;
-        lockingRef.current = false;
-        lockUntilRef.current = 0;
+        if (isGrounded(boardRef.current, p) && lockResetsRef.current < MAX_LOCK_RESETS) {
+          lockAccRef.current = 0;
+          lockResetsRef.current += 1;
+        }
         return;
       }
     }
@@ -257,122 +316,69 @@ export default function TetrisGame() {
       p.y += 1;
       scoreRef.current += 2;
     }
-    setScore(scoreRef.current);
-    mergePiece();
-    spawn();
-  }, [mergePiece, spawn]);
+    syncHud();
+    lockAndSpawn();
+  }, [lockAndSpawn, syncHud]);
 
   const softDropStep = useCallback(() => {
+    if (!runningRef.current || gameOverRef.current) return false;
     if (tryMove(0, 1)) {
       scoreRef.current += 1;
-      setScore(scoreRef.current);
+      syncHud();
       return true;
     }
+    // Grounded: accelerate lock so soft-drop can finish a piece.
+    lockAccRef.current = LOCK_DELAY_MS;
     return false;
-  }, [tryMove]);
+  }, [syncHud, tryMove]);
 
-  /** One cell of gravity, or lock when grounded. */
-  const stepDown = useCallback(() => {
-    if (!runningRef.current || gameOverRef.current) return;
-    const p = pieceRef.current;
-    if (!p) {
-      spawn();
-      return;
-    }
+  const tick = useCallback(
+    (dt: number) => {
+      if (!runningRef.current || gameOverRef.current) return;
 
-    const grounded = collides(boardRef.current, p.shape, p.x, p.y + 1);
-    const now = performance.now();
-
-    if (grounded) {
-      if (!lockingRef.current) {
-        lockingRef.current = true;
-        lockUntilRef.current = now + LOCK_DELAY_MS;
-        return;
-      }
-      if (now >= lockUntilRef.current) {
-        mergePiece();
-        spawn();
-      }
-      return;
-    }
-
-    lockingRef.current = false;
-    lockUntilRef.current = 0;
-    p.y += 1;
-  }, [mergePiece, spawn]);
-
-  const stopLoops = useCallback(() => {
-    if (gravityTimerRef.current != null) {
-      window.clearInterval(gravityTimerRef.current);
-      gravityTimerRef.current = null;
-    }
-    if (drawTimerRef.current != null) {
-      window.clearInterval(drawTimerRef.current);
-      drawTimerRef.current = null;
-    }
-  }, []);
-
-  const startLoops = useCallback(() => {
-    stopLoops();
-    dropAccRef.current = 0;
-    lastGravityTsRef.current = performance.now();
-
-    // Fast poll with accumulator — picks up speed changes and lock delay.
-    gravityTimerRef.current = window.setInterval(() => {
-      if (!runningRef.current || gameOverRef.current) {
-        lastGravityTsRef.current = performance.now();
-        return;
-      }
-      const now = performance.now();
-      const dt = Math.min(100, now - lastGravityTsRef.current);
-      lastGravityTsRef.current = now;
-
-      const p = pieceRef.current;
+      let p = pieceRef.current;
       if (!p) {
         spawn();
         return;
       }
 
-      const grounded = collides(boardRef.current, p.shape, p.x, p.y + 1);
-      if (grounded) {
-        if (!lockingRef.current) {
-          lockingRef.current = true;
-          lockUntilRef.current = now + LOCK_DELAY_MS;
-        } else if (now >= lockUntilRef.current) {
-          mergePiece();
-          spawn();
+      if (isGrounded(boardRef.current, p)) {
+        lockAccRef.current += dt;
+        if (
+          lockAccRef.current >= LOCK_DELAY_MS ||
+          lockResetsRef.current >= MAX_LOCK_RESETS
+        ) {
+          lockAndSpawn();
         }
-        dropAccRef.current = 0;
         return;
       }
 
-      lockingRef.current = false;
+      lockAccRef.current = 0;
       dropAccRef.current += dt;
       while (dropAccRef.current >= dropMsRef.current) {
         dropAccRef.current -= dropMsRef.current;
-        stepDown();
-        if (
-          !pieceRef.current ||
-          collides(
-            boardRef.current,
-            pieceRef.current.shape,
-            pieceRef.current.x,
-            pieceRef.current.y + 1,
-          )
-        ) {
+        p = pieceRef.current;
+        if (!p || gameOverRef.current) break;
+        if (isGrounded(boardRef.current, p)) {
+          lockAccRef.current += dropMsRef.current;
           break;
         }
+        p.y += 1;
       }
-    }, 33);
-
-    drawTimerRef.current = window.setInterval(() => {
-      draw();
-    }, DRAW_HZ);
-  }, [draw, mergePiece, spawn, stepDown, stopLoops]);
+    },
+    [lockAndSpawn, spawn],
+  );
 
   useEffect(() => {
-    draw();
-    startLoops();
+    const loop = (ts: number) => {
+      if (!lastTsRef.current) lastTsRef.current = ts;
+      const dt = Math.min(50, ts - lastTsRef.current);
+      lastTsRef.current = ts;
+      tick(dt);
+      draw();
+      rafRef.current = requestAnimationFrame(loop);
+    };
+    rafRef.current = requestAnimationFrame(loop);
 
     const onTestClear = () => {
       const board = emptyBoard();
@@ -382,17 +388,37 @@ export default function TetrisGame() {
       clearLines();
       draw();
     };
+
+    /** Fill almost to the top, then spawn — forces a real game-over. */
+    const onTestGameOver = () => {
+      const board = emptyBoard();
+      for (let y = 2; y < ROWS; y++) {
+        for (let x = 0; x < COLS; x++) board[y][x] = ((x + y) % 7) + 1;
+      }
+      // Leave a jagged top so it looks stacked, but spawn at y=0 collides.
+      for (let x = 0; x < COLS; x++) board[0][x] = (x % 7) + 1;
+      for (let x = 0; x < COLS; x++) board[1][x] = ((x + 3) % 7) + 1;
+      boardRef.current = board;
+      pieceRef.current = null;
+      gameOverRef.current = false;
+      runningRef.current = true;
+      spawn(); // should end the game
+      draw();
+    };
+
     window.addEventListener("tetris-test-clear", onTestClear);
+    window.addEventListener("tetris-test-gameover", onTestGameOver);
 
     return () => {
-      stopLoops();
+      cancelAnimationFrame(rafRef.current);
       window.removeEventListener("tetris-test-clear", onTestClear);
+      window.removeEventListener("tetris-test-gameover", onTestGameOver);
     };
-  }, [clearLines, draw, startLoops, stopLoops]);
+  }, [clearLines, draw, spawn, tick]);
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      if (!runningRef.current) return;
+      if (!runningRef.current || gameOverRef.current) return;
       const keys = [
         "ArrowLeft",
         "ArrowRight",
@@ -423,31 +449,32 @@ export default function TetrisGame() {
   const reset = () => {
     boardRef.current = emptyBoard();
     pieceRef.current = null;
+    nextPieceFn.current = bagPiece();
     dropMsRef.current = START_DROP_MS;
-    lockingRef.current = false;
-    lockUntilRef.current = 0;
+    dropAccRef.current = 0;
+    lockAccRef.current = 0;
+    lockResetsRef.current = 0;
     linesRef.current = 0;
     scoreRef.current = 0;
     gameOverRef.current = false;
     runningRef.current = true;
-    setScore(0);
-    setLines(0);
-    setGameOver(false);
-    setRunning(true);
+    lastTsRef.current = 0;
+    syncHud();
     spawn();
-    startLoops();
     draw();
   };
 
   const pause = () => {
+    if (gameOverRef.current) return;
     runningRef.current = false;
-    setRunning(false);
+    syncHud();
   };
 
   const resume = () => {
     if (gameOverRef.current) return;
     runningRef.current = true;
-    setRunning(true);
+    lastTsRef.current = 0;
+    syncHud();
   };
 
   return (
@@ -482,8 +509,8 @@ export default function TetrisGame() {
           </div>
         </div>
         {gameOver && (
-          <p className="text-sm font-medium text-rose-600">
-            Game over — hit New game to retry.
+          <p className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm font-medium text-rose-700">
+            Game over — stack hit the top. Hit Restart for another run.
           </p>
         )}
         <div className="flex flex-wrap gap-2">
@@ -551,8 +578,8 @@ export default function TetrisGame() {
           </button>
         </div>
         <p className="text-xs leading-6 text-slate-500">
-          Pieces fall automatically. Clear full rows for points. Keyboard:
-          arrows / WASD, Space hard drop. Touch buttons work on phone.
+          Pieces fall, lock, and clear. Stack to the top for Game Over, then
+          Restart. Keyboard: arrows / WASD, Space hard drop.
         </p>
       </div>
     </div>

@@ -1,10 +1,10 @@
 import { useEffect, useRef, useState } from "react";
-import { ExternalLink, Gamepad2, Keyboard } from "lucide-react";
+import { ExternalLink, Gamepad2, Keyboard, Mouse } from "lucide-react";
 
 /**
  * Original Doom (shareware Episode 1) via jacobenget/doom.wasm.
- * Shareware IWAD is embedded in the WASM module (freely redistributable).
- * Desktop/keyboard oriented — iframe + window key listeners + focus bridge.
+ * Keyboard + pointer-lock mouse look (emulated turn) + mouse fire.
+ * Esc / Exit returns to the portfolio.
  */
 export default function DoomEmbed() {
   const [started, setStarted] = useState(false);
@@ -21,19 +21,17 @@ export default function DoomEmbed() {
       const canvas = frame.contentDocument?.getElementById("DoomGame") as
         | HTMLCanvasElement
         | null;
-      if (canvas) {
-        canvas.tabIndex = 0;
-        canvas.focus({ preventScroll: true });
-        try {
-          canvas.setPointerCapture?.(1);
-        } catch {
-          /* ignore */
-        }
-      }
+      canvas?.focus({ preventScroll: true });
     } catch {
       frame.focus();
       frame.contentWindow?.postMessage({ type: "doom-focus" }, "*");
     }
+  };
+
+  const exitGame = () => {
+    const frame = iframeRef.current;
+    frame?.contentWindow?.postMessage({ type: "doom-exit" }, "*");
+    setStarted(false);
   };
 
   useEffect(() => {
@@ -41,14 +39,26 @@ export default function DoomEmbed() {
     const t = window.setTimeout(focusGame, 400);
     const t2 = window.setTimeout(focusGame, 1200);
 
-    // Bridge keys from the parent page into the iframe so WASD works even if
-    // focus briefly leaves the embed (common after clicking UI chrome).
+    const onMessage = (ev: MessageEvent) => {
+      if (ev.data?.type === "doom-exit") {
+        setStarted(false);
+      }
+    };
+    window.addEventListener("message", onMessage);
+
     const forward = (type: "keydown" | "keyup") => (e: KeyboardEvent) => {
       const frame = iframeRef.current;
       const win = frame?.contentWindow;
       if (!win) return;
       const target = e.target as Node | null;
-      if (target && frame?.contains(target)) return; // already inside iframe
+      if (target && frame?.contains(target)) return;
+
+      if (e.key === "Escape" || e.code === "Escape") {
+        e.preventDefault();
+        exitGame();
+        return;
+      }
+
       win.postMessage(
         {
           type: "doom-key",
@@ -59,11 +69,8 @@ export default function DoomEmbed() {
         },
         "*",
       );
-      // Keep browser from scrolling on arrows/space while playing
       if (
-        ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " ", "Space"].includes(
-          e.key,
-        ) ||
+        ["ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight", " "].includes(e.key) ||
         ["KeyW", "KeyA", "KeyS", "KeyD", "ControlLeft", "ControlRight"].includes(
           e.code,
         )
@@ -79,6 +86,7 @@ export default function DoomEmbed() {
     return () => {
       window.clearTimeout(t);
       window.clearTimeout(t2);
+      window.removeEventListener("message", onMessage);
       window.removeEventListener("keydown", onDown, true);
       window.removeEventListener("keyup", onUp, true);
     };
@@ -92,8 +100,8 @@ export default function DoomEmbed() {
             Classic Doom shareware via WebAssembly (
             <code className="text-xs">doom.wasm</code>). Episode 1 IWAD is the
             id Software–authorized shareware build embedded in the engine — no
-            commercial WAD shipped. After Start, click the game once, then use
-            the keyboard.
+            commercial WAD shipped. Mouse look + fire with pointer lock; Esc
+            exits back to the portfolio.
           </p>
         </div>
         <a
@@ -113,8 +121,9 @@ export default function DoomEmbed() {
           <div>
             <p className="font-display text-xl font-bold">Load Doom (shareware)</p>
             <p className="mt-2 max-w-md text-sm leading-7 text-slate-300">
-              ~4.4MB WASM. Click Start, then click inside the game. Keys: WASD /
-              arrows, Ctrl fire, Space use, Enter to start from the menu.
+              ~4.4MB WASM. After Start: click the game to capture the mouse.
+              Move to look, LMB fire, WASD move, Space use. Esc or Exit returns
+              here.
             </p>
           </div>
           <button
@@ -124,9 +133,14 @@ export default function DoomEmbed() {
           >
             Start Doom
           </button>
-          <p className="inline-flex items-center gap-2 text-xs text-slate-400">
-            <Keyboard size={14} /> Desktop keyboard required for full control
-          </p>
+          <div className="flex flex-wrap items-center justify-center gap-4 text-xs text-slate-400">
+            <span className="inline-flex items-center gap-2">
+              <Mouse size={14} /> Mouse look + LMB fire
+            </span>
+            <span className="inline-flex items-center gap-2">
+              <Keyboard size={14} /> WASD · Space use · Esc exit
+            </span>
+          </div>
         </div>
       ) : (
         <div className="overflow-hidden rounded-2xl border border-slate-800 bg-black shadow-xl">
@@ -135,15 +149,15 @@ export default function DoomEmbed() {
             title="Doom shareware (WebAssembly)"
             src="/games/doom/doom.html"
             className="aspect-4/3 h-[min(70vh,560px)] w-full bg-black"
-            allow="autoplay; fullscreen; gamepad"
+            allow="autoplay; fullscreen; gamepad; pointer-lock"
             tabIndex={0}
             onLoad={focusGame}
             onClick={focusGame}
           />
           <div className="flex flex-wrap items-center justify-between gap-3 border-t border-slate-800 bg-slate-950 px-4 py-3 text-xs text-slate-400">
             <span>
-              Click the game for focus · WASD/arrows · Ctrl fire · Space use ·
-              Enter
+              Mouse look · LMB fire · RMB/Space use · WASD/arrows ·{" "}
+              <strong className="font-semibold text-sky-300">Esc exits</strong>
             </span>
             <div className="flex gap-2">
               <button
@@ -151,14 +165,14 @@ export default function DoomEmbed() {
                 onClick={focusGame}
                 className="rounded-lg border border-sky-700/60 bg-sky-950/40 px-3 py-1.5 text-sky-200 hover:bg-sky-900/40"
               >
-                Focus keyboard
+                Recapture mouse
               </button>
               <button
                 type="button"
-                onClick={() => setStarted(false)}
-                className="rounded-lg border border-slate-700 px-3 py-1.5 text-slate-200 hover:bg-slate-900"
+                onClick={exitGame}
+                className="rounded-lg border border-rose-700/50 bg-rose-950/40 px-3 py-1.5 text-rose-100 hover:bg-rose-900/40"
               >
-                Unload
+                Exit
               </button>
             </div>
           </div>
