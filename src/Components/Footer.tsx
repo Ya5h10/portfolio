@@ -1,61 +1,71 @@
 import { Github, Mail, Globe, ArrowUpRight } from "lucide-react";
+import { profile } from "../data/site";
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();
 
   return (
-    <footer className="w-full bg-white border-t border-gray-200 mt-auto">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
-        <div className="flex flex-col md:flex-row justify-between items-center md:items-start gap-8">
-          
-          <div className="flex flex-col items-center md:items-start text-center md:text-left">
-            <a href="/" className="font-bold text-xl text-blue-700 tracking-tight">
-              Yash <span className="text-gray-900">Makwana</span>
+    <footer className="mt-auto w-full border-t border-slate-200/80 bg-white/70 backdrop-blur-sm">
+      <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-12">
+        <div className="flex flex-col items-center justify-between gap-8 md:flex-row md:items-start">
+          <div className="flex flex-col items-center text-center md:items-start md:text-left">
+            <a
+              href="/"
+              className="font-display text-xl font-bold tracking-tight text-slate-900"
+            >
+              Yash{" "}
+              <span className="bg-linear-to-r from-sky-600 to-violet-600 bg-clip-text text-transparent">
+                Makwana
+              </span>
             </a>
-            <p className="mt-3 text-sm text-gray-500 max-w-xs leading-relaxed">
-              AI & Full Stack Developer building intelligent, scalable, and user-centric digital solutions.
+            <p className="mt-3 max-w-xs text-sm leading-relaxed text-slate-500">
+              {profile.role} — building autonomous hiring systems, RAG
+              pipelines, and AI products that ship.
             </p>
           </div>
 
-          <div className="flex flex-col items-center md:items-end gap-4">
-            <div className="flex items-center gap-4">
+          <div className="flex flex-col items-center gap-4 md:items-end">
+            <div className="flex items-center gap-3">
               <a
-                href="https://github.com/Ya5h10"
+                href={profile.githubUrl}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2.5 rounded-full bg-gray-50 text-gray-500 hover:text-gray-900 hover:bg-gray-100 transition-colors duration-200"
+                className="rounded-full bg-slate-50 p-2.5 text-slate-500 transition-colors hover:bg-slate-100 hover:text-slate-900"
                 aria-label="GitHub"
               >
-                <Github size={20} />
+                <Github size={18} />
               </a>
               <a
-                href="mailto:connect@yashmakwana.com"
-                className="p-2.5 rounded-full bg-gray-50 text-gray-500 hover:text-blue-600 hover:bg-blue-50 transition-colors duration-200"
+                href={`mailto:${profile.email}`}
+                className="rounded-full bg-slate-50 p-2.5 text-slate-500 transition-colors hover:bg-sky-50 hover:text-sky-700"
                 aria-label="Email"
               >
-                <Mail size={20} />
+                <Mail size={18} />
               </a>
               <a
-                href="https://yashmakwana.com"
+                href={profile.website}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="p-2.5 rounded-full bg-gray-50 text-gray-500 hover:text-green-600 hover:bg-green-50 transition-colors duration-200"
+                className="rounded-full bg-slate-50 p-2.5 text-slate-500 transition-colors hover:bg-violet-50 hover:text-violet-700"
                 aria-label="Website"
               >
-                <Globe size={20} />
+                <Globe size={18} />
               </a>
             </div>
             <a
-              href="/contact"
-              className="inline-flex items-center gap-1.5 text-sm font-medium text-gray-600 hover:text-blue-600 transition-colors duration-200"
+              href="/#contact"
+              className="inline-flex items-center gap-1.5 text-sm font-medium text-slate-600 transition-colors hover:text-sky-700"
             >
               Get in touch <ArrowUpRight size={14} />
             </a>
           </div>
         </div>
 
-        <div className="mt-8 pt-8 border-t border-gray-100 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-gray-500">
+        <div className="mt-8 flex flex-col items-center justify-between gap-3 border-t border-slate-100 pt-6 text-xs text-slate-500 sm:flex-row">
           <p>© {currentYear} Yash Makwana. All rights reserved.</p>
+          <p>
+            {profile.location} · {profile.timezone}
+          </p>
         </div>
       </div>
     </footer>

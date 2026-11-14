@@ -1,80 +1,67 @@
 import { ArrowUpRight } from "lucide-react";
 import { motion } from "motion/react";
-
-const websites = [
-  {
-    name: "Delve Experiences",
-    url: "https://delveexperiences.co/",
-    type: "Business Website",
-    blurb: "Experience-focused travel and storytelling website with a clean premium feel.",
-  },
-  {
-    name: "Highest Praise Church",
-    url: "https://www.highestpraisechurch.org/",
-    type: "Community / Church Website",
-    blurb: "Faith community website designed for clear communication and accessibility.",
-  },
-  {
-    name: "AI Image Upscaler",
-    url: "https://upscaler.yashmakwana.com",
-    type: "AI Product Landing",
-    blurb: "Product-focused frontend for an AI upscaling workflow with conversion-first UX.",
-  },
-];
+import { websites } from "../data/site";
 
 export default function Websites() {
   return (
-    <section id="websites" className="w-full py-16 sm:py-24 px-4 sm:px-6">
-      <div className="max-w-6xl mx-auto">
+    <section id="shipped" className="relative scroll-mt-28 px-4 py-20 sm:px-6 sm:py-28">
+      <div className="mx-auto max-w-6xl">
         <motion.div
-          initial={{ opacity: 0, y: 40 }}
+          initial={{ opacity: 0, y: 28 }}
           whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, margin: "-100px" }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
-          className="text-left mb-10"
+          viewport={{ once: true, margin: "-80px" }}
+          transition={{ duration: 0.55 }}
+          className="mb-10 max-w-2xl"
         >
-          <p className="text-sm uppercase tracking-[0.2em] text-blue-600 font-medium mb-3">
-            Work Showcase
+          <p className="mb-3 text-sm font-semibold tracking-[0.2em] text-sky-700 uppercase">
+            Shipped surfaces
           </p>
-          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 tracking-tight">
-            Websites & Designs
+          <h2 className="font-display text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl md:text-5xl">
+            Live sites you can open today
           </h2>
-          <p className="text-gray-500 mt-3 text-base sm:text-lg max-w-2xl leading-relaxed">
-            A few websites and product experiences I have designed and shipped.
+          <p className="mt-4 text-base leading-relaxed text-slate-600 sm:text-lg">
+            Production URLs for client and product work — the kind of signal
+            remote recruiters verify in the first pass.
           </p>
         </motion.div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-5">
+        <ul className="divide-y divide-slate-200/90 border-y border-slate-200/90">
           {websites.map((site, index) => (
-            <motion.a
+            <motion.li
               key={site.url}
-              initial={{ opacity: 0, y: 40 }}
+              initial={{ opacity: 0, y: 16 }}
               whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-50px" }}
-              transition={{ duration: 0.5, ease: "easeOut", delay: index * 0.15 }}
-              href={site.url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="group rounded-2xl bg-white border border-gray-200/80 p-6 text-left
-                shadow-sm shadow-gray-200/50 hover:shadow-lg hover:border-gray-300/80
-                transition-[box-shadow,border-color] duration-200"
+              viewport={{ once: true, margin: "-40px" }}
+              transition={{ duration: 0.4, delay: index * 0.08 }}
             >
-              <p className="text-xs uppercase tracking-[0.14em] text-gray-400 font-semibold mb-4">
-                {site.type}
-              </p>
-              <h3 className="text-xl font-bold text-gray-900 group-hover:text-blue-700 transition-colors duration-200">
-                {site.name}
-              </h3>
-              <p className="text-sm text-gray-500 mt-3 leading-relaxed min-h-[3.5rem]">
-                {site.blurb}
-              </p>
-              <div className="mt-6 inline-flex items-center gap-1.5 text-sm text-blue-600 font-medium">
-                Visit website
-                <ArrowUpRight size={15} />
-              </div>
-            </motion.a>
+              <a
+                href={site.url}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="group flex flex-col gap-3 py-6 transition-colors sm:flex-row sm:items-center sm:justify-between sm:gap-8"
+              >
+                <div className="min-w-0">
+                  <p className="text-xs font-semibold tracking-[0.14em] text-slate-400 uppercase">
+                    {site.type}
+                  </p>
+                  <h3 className="font-display mt-1 text-xl font-bold text-slate-900 transition-colors group-hover:text-sky-700 sm:text-2xl">
+                    {site.name}
+                  </h3>
+                  <p className="mt-2 max-w-xl text-sm leading-relaxed text-slate-600 sm:text-[15px]">
+                    {site.blurb}
+                  </p>
+                </div>
+                <span className="inline-flex shrink-0 items-center gap-1.5 text-sm font-semibold text-sky-700">
+                  Visit
+                  <ArrowUpRight
+                    size={16}
+                    className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5 group-active:scale-95"
+                  />
+                </span>
+              </a>
+            </motion.li>
           ))}
-        </div>
+        </ul>
       </div>
     </section>
   );
