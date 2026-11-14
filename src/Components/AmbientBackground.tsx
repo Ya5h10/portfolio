@@ -6,21 +6,21 @@ export default function AmbientBackground() {
     >
       <div className="absolute inset-0 bg-[#fbfdff]" />
       <div
-        className="blob blob-a top-[-12%] left-[-8%] h-[42vmin] w-[42vmin] opacity-70"
+        className="blob blob-breathe-a top-[-12%] left-[-8%] h-[46vmin] w-[46vmin] opacity-75"
         style={{
           background:
             "radial-gradient(circle at 30% 30%, #93c5fd 0%, #bfdbfe 45%, transparent 70%)",
         }}
       />
       <div
-        className="blob blob-b top-[18%] right-[-10%] h-[48vmin] w-[48vmin] opacity-55"
+        className="blob blob-breathe-b top-[18%] right-[-10%] h-[52vmin] w-[52vmin] opacity-60"
         style={{
           background:
             "radial-gradient(circle at 60% 40%, #c4b5fd 0%, #ddd6fe 40%, transparent 72%)",
         }}
       />
       <div
-        className="blob blob-c bottom-[-8%] left-[22%] h-[40vmin] w-[40vmin] opacity-50"
+        className="blob blob-breathe-c bottom-[-8%] left-[22%] h-[44vmin] w-[44vmin] opacity-55"
         style={{
           background:
             "radial-gradient(circle at 50% 50%, #7dd3fc 0%, #e0e7ff 50%, transparent 75%)",

@@ -1,4 +1,4 @@
-import { ArrowUpRight, Github, Mail, Globe, Phone, MapPin } from "lucide-react";
+import { ArrowUpRight, Github, Mail, Globe, Phone, MapPin, FileDown } from "lucide-react";
 import { motion } from "motion/react";
 import { profile } from "../data/site";
 
@@ -26,6 +26,12 @@ const contactLinks = [
     value: profile.phone,
     href: profile.phoneHref,
     icon: Phone,
+  },
+  {
+    label: "Resume",
+    value: "AI_ML_resume.pdf",
+    href: profile.resumePath,
+    icon: FileDown,
   },
 ];
 
@@ -65,15 +71,28 @@ export default function Contact({ embedded = false }: { embedded?: boolean }) {
             <p className="mt-3 text-sm leading-7 text-slate-600">
               {profile.timezone} · {profile.availability}
             </p>
-            <motion.a
-              href={`mailto:${profile.email}?subject=Remote%20role%20for%20Agentic%20AI%20Developer`}
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="mt-6 inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-5 py-3.5 text-sm font-semibold text-white shadow-lg shadow-slate-900/15"
-            >
-              Email {profile.name.split(" ")[0]}
-              <ArrowUpRight size={15} />
-            </motion.a>
+            <div className="mt-6 flex flex-wrap gap-3">
+              <motion.a
+                href={`mailto:${profile.email}?subject=Remote%20role%20for%20Agentic%20AI%20Developer`}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="inline-flex items-center gap-2 rounded-2xl bg-slate-900 px-5 py-3.5 text-sm font-semibold text-white shadow-lg shadow-slate-900/15"
+              >
+                Email {profile.name.split(" ")[0]}
+                <ArrowUpRight size={15} />
+              </motion.a>
+              <motion.a
+                href={profile.resumePath}
+                target="_blank"
+                rel="noopener noreferrer"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                className="inline-flex items-center gap-2 rounded-2xl border border-sky-200 bg-white px-5 py-3.5 text-sm font-semibold text-sky-900"
+              >
+                <FileDown size={15} />
+                {profile.resumeLabel}
+              </motion.a>
+            </div>
           </div>
         </motion.div>
 

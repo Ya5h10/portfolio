@@ -62,39 +62,33 @@ body {
   background: #94a3b8;
 }
 
-@keyframes blob-drift-a {
+@keyframes blob-breathe-a {
   0%,
   100% {
-    transform: translate3d(0, 0, 0) scale(1);
+    transform: translate3d(0, 0, 0) scale(0.92);
   }
-  33% {
-    transform: translate3d(4%, -3%, 0) scale(1.06);
-  }
-  66% {
-    transform: translate3d(-3%, 4%, 0) scale(0.96);
+  50% {
+    transform: translate3d(2%, -2%, 0) scale(1.12);
   }
 }
 
-@keyframes blob-drift-b {
+@keyframes blob-breathe-b {
   0%,
   100% {
-    transform: translate3d(0, 0, 0) scale(1.05);
+    transform: translate3d(0, 0, 0) scale(1.08);
   }
-  40% {
-    transform: translate3d(-5%, 2%, 0) scale(1);
-  }
-  70% {
-    transform: translate3d(3%, -4%, 0) scale(1.08);
+  50% {
+    transform: translate3d(-3%, 2%, 0) scale(0.9);
   }
 }
 
-@keyframes blob-drift-c {
+@keyframes blob-breathe-c {
   0%,
   100% {
     transform: translate3d(0, 0, 0) scale(0.95);
   }
   50% {
-    transform: translate3d(2%, 5%, 0) scale(1.04);
+    transform: translate3d(2%, 3%, 0) scale(1.14);
   }
 }
 
@@ -104,22 +98,23 @@ body {
   filter: blur(72px);
   will-change: transform;
   pointer-events: none;
+  transform-origin: center center;
 }
 
-.blob-a {
-  animation: blob-drift-a 18s ease-in-out infinite;
+.blob-breathe-a {
+  animation: blob-breathe-a 14s ease-in-out infinite;
 }
-.blob-b {
-  animation: blob-drift-b 22s ease-in-out infinite;
+.blob-breathe-b {
+  animation: blob-breathe-b 18s ease-in-out infinite;
 }
-.blob-c {
-  animation: blob-drift-c 26s ease-in-out infinite;
+.blob-breathe-c {
+  animation: blob-breathe-c 22s ease-in-out infinite;
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .blob-a,
-  .blob-b,
-  .blob-c {
+  .blob-breathe-a,
+  .blob-breathe-b,
+  .blob-breathe-c {
     animation: none;
   }
 

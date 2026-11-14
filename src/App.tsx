@@ -2,8 +2,9 @@ import AmbientBackground from './Components/AmbientBackground'
 import Hero from './Components/Hero'
 import './App.css'
 import Navbar from './Components/ui/Navabar'
-import AgentQuest from './Components/AgentQuest'
+import Arcade from './Components/Arcade'
 import Experience from './Components/Experience'
+import Education from './Components/Education'
 import Stack from './Components/Stack'
 import Projects from './Components/Projects'
 import Websites from './Components/Websites'
@@ -22,10 +23,11 @@ function App() {
       ) : (
         <>
           <Hero />
-          <AgentQuest />
           <Projects />
           <Experience />
+          <Education />
           <Stack />
+          <Arcade />
           <Websites />
           <Contact embedded />
         </>

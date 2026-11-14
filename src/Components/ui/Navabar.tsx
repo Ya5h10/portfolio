@@ -3,10 +3,10 @@ import { Github, Menu, X } from "lucide-react";
 import { profile } from "../../data/site";
 
 const links = [
-  { href: "/#quest", label: "Quest" },
   { href: "/#work", label: "Work" },
   { href: "/#experience", label: "Experience" },
   { href: "/#stack", label: "Stack" },
+  { href: "/#arcade", label: "Arcade" },
   { href: "/#shipped", label: "Shipped" },
   { href: "/#contact", label: "Contact" },
 ];

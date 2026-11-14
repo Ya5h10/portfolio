@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { ArrowUpRight, ExternalLink, Github, X } from "lucide-react";
 import { projects, type Project } from "../data/projects";
@@ -49,7 +49,7 @@ function ProjectRow({
             {project.outcome}
           </p>
           <p className="mt-2 text-xs font-medium tracking-wide text-slate-400 uppercase">
-            Quest · {project.questRole}
+            {project.year}
           </p>
           <div className="mt-4 flex flex-wrap gap-2">
             {project.stack.slice(0, 4).map((tech) => (
@@ -166,16 +166,18 @@ function ProjectDetail({
       </div>
 
       <div className="flex flex-wrap gap-3 border-t border-slate-100 bg-slate-50/60 px-5 py-5 sm:px-7">
-        <a
-          href={project.repo}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90 active:scale-[0.98]"
-        >
-          <Github size={16} />
-          View on GitHub
-          <ArrowUpRight size={14} className="opacity-80" />
-        </a>
+        {project.repo && (
+          <a
+            href={project.repo}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-4 py-2.5 text-sm font-medium text-white transition-opacity hover:opacity-90 active:scale-[0.98]"
+          >
+            <Github size={16} />
+            View on GitHub
+            <ArrowUpRight size={14} className="opacity-80" />
+          </a>
+        )}
         {project.liveUrl && (
           <a
             href={project.liveUrl}
@@ -194,16 +196,6 @@ function ProjectDetail({
 
 export default function Projects() {
   const [selected, setSelected] = useState<Project | null>(projects[0]);
-
-  useEffect(() => {
-    const onFocus = (event: Event) => {
-      const id = (event as CustomEvent<string>).detail;
-      const match = projects.find((p) => p.id === id);
-      if (match) setSelected(match);
-    };
-    window.addEventListener("focus-project", onFocus);
-    return () => window.removeEventListener("focus-project", onFocus);
-  }, []);
 
   const handleSelect = (project: Project) => {
     const isMobile = window.innerWidth < 768;
@@ -239,9 +231,8 @@ export default function Projects() {
               Proof of agentic systems in the wild
             </h2>
             <p className="mt-5 text-base leading-8 text-slate-600 sm:text-lg sm:leading-8">
-              Real repos with problem, process, stack, and ownership. Fully
-              readable without the quest — tap a project for depth, GitHub (and
-              live demos) one click away.
+              Projects aligned with the resume — problem, process, stack, and
+              ownership. Tap for depth; GitHub and live demos one click away.
             </p>
           </div>
           <a

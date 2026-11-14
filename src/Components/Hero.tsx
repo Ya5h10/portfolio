@@ -1,5 +1,5 @@
 import { motion } from "motion/react";
-import { ArrowDown, ArrowUpRight, Gamepad2, Mail } from "lucide-react";
+import { ArrowDown, ArrowUpRight, FileDown, Gamepad2, Mail } from "lucide-react";
 import { profile } from "../data/site";
 
 export default function Hero() {
@@ -51,13 +51,24 @@ export default function Hero() {
             Talk to me
           </motion.a>
           <motion.a
-            href="#quest"
+            href={profile.resumePath}
+            target="_blank"
+            rel="noopener noreferrer"
+            whileHover={{ scale: 1.03 }}
+            whileTap={{ scale: 0.97 }}
+            className="inline-flex items-center gap-2 rounded-2xl border border-sky-200 bg-sky-50/90 px-5 py-3.5 text-sm font-semibold text-sky-900 transition-colors hover:bg-sky-50 sm:text-base"
+          >
+            <FileDown size={17} />
+            Resume PDF
+          </motion.a>
+          <motion.a
+            href="#arcade"
             whileHover={{ scale: 1.03 }}
             whileTap={{ scale: 0.97 }}
             className="inline-flex items-center gap-2 rounded-2xl border border-violet-200 bg-violet-50/80 px-5 py-3.5 text-sm font-semibold text-violet-900 transition-colors hover:bg-violet-50 sm:text-base"
           >
             <Gamepad2 size={17} />
-            Play the agent quest
+            Play arcade
           </motion.a>
           <motion.a
             href="#work"
@@ -65,20 +76,20 @@ export default function Hero() {
             whileTap={{ scale: 0.97 }}
             className="inline-flex items-center gap-2 rounded-2xl border border-slate-300/80 bg-white/70 px-5 py-3.5 text-sm font-semibold text-slate-800 backdrop-blur-sm transition-colors hover:border-slate-400 hover:bg-white sm:text-base"
           >
-            Skip to proof
+            See proof
             <ArrowUpRight size={16} />
           </motion.a>
         </div>
       </motion.div>
 
       <motion.a
-        href="#quest"
+        href="#work"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.8, duration: 0.6 }}
         className="mt-16 inline-flex w-fit items-center gap-2 text-sm font-medium text-slate-500 transition-colors hover:text-slate-800 sm:mt-20"
       >
-        Scroll into the loop
+        Scroll for projects
         <ArrowDown size={16} className="animate-bounce" />
       </motion.a>
     </section>
