@@ -25,6 +25,7 @@ body {
   color: var(--color-ink);
   background: #ffffff;
   font-family: var(--font-sans);
+  line-height: 1.7;
   -webkit-font-smoothing: antialiased;
   text-rendering: optimizeLegibility;
 }

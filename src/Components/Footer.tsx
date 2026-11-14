@@ -6,8 +6,8 @@ export default function Footer() {
 
   return (
     <footer className="mt-auto w-full border-t border-slate-200/80 bg-white/70 backdrop-blur-sm">
-      <div className="mx-auto max-w-6xl px-4 py-10 sm:px-6 sm:py-12">
-        <div className="flex flex-col items-center justify-between gap-8 md:flex-row md:items-start">
+      <div className="mx-auto max-w-6xl px-4 py-12 sm:px-6 sm:py-14">
+        <div className="flex flex-col items-center justify-between gap-10 md:flex-row md:items-start">
           <div className="flex flex-col items-center text-center md:items-start md:text-left">
             <a
               href="/"
@@ -18,7 +18,7 @@ export default function Footer() {
                 Makwana
               </span>
             </a>
-            <p className="mt-3 max-w-xs text-sm leading-relaxed text-slate-500">
+            <p className="mt-4 max-w-xs text-sm leading-7 text-slate-500">
               {profile.role} — building autonomous hiring systems, RAG
               pipelines, and AI products that ship.
             </p>

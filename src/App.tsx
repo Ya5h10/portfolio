@@ -2,6 +2,7 @@ import AmbientBackground from './Components/AmbientBackground'
 import Hero from './Components/Hero'
 import './App.css'
 import Navbar from './Components/ui/Navabar'
+import AgentQuest from './Components/AgentQuest'
 import Experience from './Components/Experience'
 import Stack from './Components/Stack'
 import Projects from './Components/Projects'
@@ -21,6 +22,7 @@ function App() {
       ) : (
         <>
           <Hero />
+          <AgentQuest />
           <Projects />
           <Experience />
           <Stack />
